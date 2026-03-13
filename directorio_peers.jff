@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><!--Created with JFLAP 6.4.--><structure>
+	<type>fa</type>
+	<automaton>
+		<!--The list of states.-->
+		<state id="0" name="q0">
+			<x>403.0</x>
+			<y>264.0</y>
+		</state>
+		<state id="1" name="q1">
+			<x>396.0</x>
+			<y>40.0</y>
+		</state>
+		<state id="2" name="q2">
+			<x>654.0</x>
+			<y>269.0</y>
+		</state>
+		<state id="3" name="q3">
+			<x>526.0</x>
+			<y>411.0</y>
+		</state>
+		<state id="4" name="q4">
+			<x>275.0</x>
+			<y>439.0</y>
+		</state>
+		<state id="5" name="q5">
+			<x>194.0</x>
+			<y>288.0</y>
+		</state>
+		<state id="6" name="q6">
+			<x>270.0</x>
+			<y>131.0</y>
+		</state>
+		<!--The list of transitions.-->
+		<transition>
+			<from>1</from>
+			<to>0</to>
+			<read>snd(ping_ok)</read>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>5</to>
+			<read>rcv(peers)</read>
+		</transition>
+		<transition>
+			<from>1</from>
+			<to>0</to>
+			<read>snd(ping_error)</read>
+		</transition>
+		<transition>
+			<from>2</from>
+			<to>0</to>
+			<read>snd(nick_ok)</read>
+		</transition>
+		<transition>
+			<from>4</from>
+			<to>0</to>
+			<read>snd(dirfiles)</read>
+		</transition>
+		<transition>
+			<from>6</from>
+			<to>0</to>
+			<read>snd(dirdl_file)</read>
+		</transition>
+		<transition>
+			<from>3</from>
+			<to>0</to>
+			<read>snd(serve_error)</read>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>4</to>
+			<read>rcv(dirfiles)</read>
+		</transition>
+		<transition>
+			<from>6</from>
+			<to>0</to>
+			<read>snd(dirdl_file_not_found)</read>
+		</transition>
+		<transition>
+			<from>5</from>
+			<to>0</to>
+			<read>snd(peers_ok)</read>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>1</to>
+			<read>rcv(ping)</read>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>3</to>
+			<read>rcv(serve)</read>
+		</transition>
+		<transition>
+			<from>3</from>
+			<to>0</to>
+			<read>snd(serve_ok)</read>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>6</to>
+			<read>rcv(dirdl)</read>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>2</to>
+			<read>rcv(nick)</read>
+		</transition>
+	</automaton>
+</structure>

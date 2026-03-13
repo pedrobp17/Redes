@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><!--Created with JFLAP 6.4.--><structure>
+	<type>fa</type>
+	<automaton>
+		<!--The list of states.-->
+		<state id="0" name="q0">
+			<x>249.0</x>
+			<y>114.0</y>
+		</state>
+		<state id="1" name="q1">
+			<x>257.0</x>
+			<y>325.0</y>
+		</state>
+		<state id="2" name="q2">
+			<x>509.0</x>
+			<y>241.0</y>
+		</state>
+		<!--The list of transitions.-->
+		<transition>
+			<from>0</from>
+			<to>2</to>
+			<read>snd(peerdl)</read>
+		</transition>
+		<transition>
+			<from>1</from>
+			<to>0</to>
+			<read>rcv(peerfiles_ok)</read>
+		</transition>
+		<transition>
+			<from>2</from>
+			<to>0</to>
+			<read>rcv(peerdl_error)</read>
+		</transition>
+		<transition>
+			<from>1</from>
+			<to>0</to>
+			<read>rcv(peer_not_found)</read>
+		</transition>
+		<transition>
+			<from>2</from>
+			<to>0</to>
+			<read>rcv(peerdl_file)</read>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>1</to>
+			<read>snd(peerfiles)</read>
+		</transition>
+	</automaton>
+</structure>
