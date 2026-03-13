@@ -16,7 +16,9 @@ public class NFController {
 	 * TODO: (Boletín Autómatas) Añadir más constantes que representen los estados
 	 * del autómata del cliente de directorio.
 	 */
-
+	private static final byte PING = 1;
+	private static final byte SERVE = 2;
+	
 	/**
 	 * Shell para leer comandos de usuario de la entrada estándar
 	 */
@@ -217,9 +219,62 @@ public class NFController {
 			commandAllowed = true;
 			break;
 		}
+		case NFCommands.COM_PING: {
+			if( currentState != OFFLINE) {
+				commandAllowed = false;
+			}
+			break;
+		}
+		case NFCommands.COM_NICK: {
+			if ( currentState != PING) {
+				commandAllowed = false;
+			}
+		}
+		case NFCommands.COM_SERVE: {
+			if ( currentState != PING) {
+				commandAllowed = false;
+			}
+			break;
+		}
+		case NFCommands.COM_FILELIST_DIR: {
+			if ( currentState != SERVE) {
+				commandAllowed = false;
+			}
+			break;
+		}
+		case NFCommands.COM_DOWNLOAD_DIR: {
+			if ( currentState != SERVE) {
+				commandAllowed = false;
+			}
+			break;
+		}
+		case NFCommands.COM_PEERLIST: {
+			if ( currentState != SERVE) {
+				commandAllowed = false;
+			}
+			break;
+		}
+		case NFCommands.COM_QUIT: {
+			if( currentState != SERVE) {
+				commandAllowed = false;
+			}
+			break;
+		}
+		case NFCommands.COM_DOWNLOAD_PEER: {
+			if( currentState != SERVE) {
+				commandAllowed = false;
+			}
+			break;
+		}
+		case NFCommands.COM_FILELIST_PEER: {
+			if( currentState != SERVE) {
+				commandAllowed = false;
+			}
+			break;
+		}
+		
 		default:
-			// System.err.println("ERROR: undefined behaviour for " + currentCommand + "
-			// command!");
+			// System.err.println("ERROR: undefined behaviour for " + currentCommand + "command!");
 		}
 		return commandAllowed;
 	}
@@ -234,6 +289,18 @@ public class NFController {
 			return;
 		}
 		switch (currentCommand) {
+		case NFCommands.COM_PING: {
+			currentState = PING;
+			break;
+		}
+		case NFCommands.COM_SERVE: {
+			currentState = SERVE;
+			break;
+		}
+		case NFCommands.COM_QUIT: {
+			currentState = PING;
+			break;
+		}
 		default:
 		}
 
