@@ -336,12 +336,6 @@ public class DirectoryConnector {
 			System.out.println("Dirfiles succesful");
 			filelist=response.getFileList().toArray(FileInfo[]::new);
 		}
-		else {
-			System.out.println("Dirfiles failed");
-			filelist=null;
-		}
-
-
 		return filelist;
 	}
 
@@ -357,12 +351,6 @@ public class DirectoryConnector {
 			System.out.println("Peers succesful");
 			peers=response.getPeerList();
 		}
-		else {
-			System.out.println("Peers failed");
-			peers=null;
-		}
-		
-
 		return peers;
 	}
 

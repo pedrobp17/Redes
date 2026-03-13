@@ -13,13 +13,11 @@ public class DirMessageOps {
 	public static final String OPERATION_PING_ERROR = "ping_error";
 	public static final String OPERATION_DIRFILES="dirfiles";
 	public static final String OPERATION_DIRFILES_OK="dirfiles_ok";
-	public static final String OPERATION_DIRFILES_ERROR="dirfiles_error";
 	public static final String OPERATION_SERVE="serve";
 	public static final String OPERATION_SERVE_OK="serve_ok";
 	public static final String OPERATION_SERVE_ERROR="serve_error";
 	public static final String OPERATION_PEERS="peers";
 	public static final String OPERATION_PEERS_OK="peers_ok";
-	public static final String OPERATION_PEERS_ERROR="peers_error";
 	
 	// TODO: definir las operaciones del protocolo de directorio
 

@@ -289,7 +289,7 @@ public class NFDirectoryServer {
 			break;
 		}
 		case DirMessageOps.OPERATION_SERVE: {
-			if(registeredPeers.containsKey(request.getServerNickname())) {
+			if(!registeredPeers.containsKey(request.getServerNickname())) {
 				registeredPeers.put(request.getServerNickname(), request.getServerAddress());
 				response=new DirMessage(DirMessageOps.OPERATION_SERVE_OK);
 			}
