@@ -1,0 +1,10 @@
+PEERFILES:
+peticion: 
+OPCODE
+0X01
+info: listame tus ficheros
+respuesta:
+OPCODE NUM_FICHEROS NAME_FICHERO 
+0x02
+
+

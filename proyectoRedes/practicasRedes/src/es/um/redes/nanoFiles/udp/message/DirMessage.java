@@ -30,6 +30,7 @@ public class DirMessage {
 	private static final String FIELDNAME_OPERATION = "operation";
 	private static final String FIELDNAME_PROTOCOL_ID="protocolid";
 	private static final String FIELDNAME_FILE="file";
+	private static final String FIELDNAME_LAST="last";
 	private static final String FIELDNAME_SERVER="server";
 	private static final String FIELDNAME_PEER="peer";
 	
@@ -49,6 +50,7 @@ public class DirMessage {
 	 * Identificador de protocolo usado, para comprobar compatibilidad del directorio.
 	 */
 	private String protocolId;
+	private boolean isLast = true;
 	/*
 	 * TODO: (Boletín MensajesASCII) Crear un atributo correspondiente a cada uno de
 	 * los campos de los diferentes mensajes de este protocolo.
@@ -108,7 +110,15 @@ public class DirMessage {
 	public List<FileInfo> getFileList() {
 		return Collections.unmodifiableList(fileList);
 	}
+	
+	public void setLast( boolean last ) {
+		this.isLast = last;
+	}
 
+	public boolean getLast() {
+		return isLast;
+	}
+	
 	public void setServerNickname(String sn) {
 		serverNickname=sn;
 	}
@@ -187,6 +197,10 @@ public class DirMessage {
 				
 				break;
 			}
+			case FIELDNAME_LAST: {
+				m.setLast(Boolean.parseBoolean(value));
+				break;
+			}
 			case FIELDNAME_SERVER: {
 				
 				//TODO verificar que no se accedan a posiciones indebidas del array
@@ -256,6 +270,7 @@ public class DirMessage {
 				break;
 			}
 			case DirMessageOps.OPERATION_DIRFILES_OK: {
+				sb.append(FIELDNAME_LAST + DELIMITER + isLast + END_LINE);
 				for(FileInfo file: fileList) {
 					sb.append(FIELDNAME_FILE + DELIMITER + file.fileName + "," + file.fileSize + "," + file.fileHash + END_LINE);
 				}

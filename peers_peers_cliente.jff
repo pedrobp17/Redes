@@ -14,11 +14,15 @@
 			<x>509.0</x>
 			<y>241.0</y>
 		</state>
+		<state id="3" name="q3">
+			<x>448.0</x>
+			<y>63.0</y>
+		</state>
 		<!--The list of transitions.-->
 		<transition>
 			<from>0</from>
-			<to>2</to>
-			<read>snd(peerdl)</read>
+			<to>3</to>
+			<read>snd(peerdl*)</read>
 		</transition>
 		<transition>
 			<from>1</from>
@@ -28,22 +32,37 @@
 		<transition>
 			<from>2</from>
 			<to>0</to>
-			<read>rcv(peerdl_error)</read>
+			<read>rcv(peerdl_file)</read>
 		</transition>
 		<transition>
-			<from>1</from>
+			<from>3</from>
 			<to>0</to>
-			<read>rcv(peer_not_found)</read>
+			<read>rcv(peerdl*_error)</read>
+		</transition>
+		<transition>
+			<from>3</from>
+			<to>0</to>
+			<read>rcv(peerdl*_chunk)</read>
 		</transition>
 		<transition>
 			<from>2</from>
 			<to>0</to>
-			<read>rcv(peerdl_file)</read>
+			<read>rcv(peerdl_error)</read>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>2</to>
+			<read>snd(peerdl)</read>
 		</transition>
 		<transition>
 			<from>0</from>
 			<to>1</to>
 			<read>snd(peerfiles)</read>
+		</transition>
+		<transition>
+			<from>1</from>
+			<to>0</to>
+			<read>rcv(peer_not_found)</read>
 		</transition>
 	</automaton>
 </structure>

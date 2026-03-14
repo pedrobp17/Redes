@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.LinkedHashMap;
 
+import es.um.redes.nanoFiles.application.Directory;
 import es.um.redes.nanoFiles.application.NanoFiles;
 import es.um.redes.nanoFiles.udp.message.DirMessage;
 import es.um.redes.nanoFiles.udp.message.DirMessageOps;
@@ -47,6 +48,13 @@ public class NFDirectoryServer {
 	 * enlace no confiable y testear el código de retransmisión)
 	 */
 	private double messageDiscardProbability;
+	
+	private void enviarPaquete( DirMessage m, InetSocketAddress addr) throws IOException{
+		String responseString = m.toString();
+		byte[] responseData=responseString.getBytes();
+		DatagramPacket responsePacket=new DatagramPacket(responseData, responseData.length, addr);
+		socket.send(responsePacket);
+	}
 
 	public NFDirectoryServer(double corruptionProbability, String directoryFilesPath) throws SocketException {
 		/*
@@ -281,9 +289,24 @@ public class NFDirectoryServer {
 		}
 		case DirMessageOps.OPERATION_DIRFILES: {
 				System.out.println("Dirfiles succesful");
-				response=new DirMessage(DirMessageOps.OPERATION_DIRFILES_OK);
-				for(FileInfo file : directoryFiles) {
-					response.addFile(file);
+				int totalFiles = directoryFiles.length;
+				int chunkSize = 7;
+				
+				if( totalFiles == 0) {
+					response=new DirMessage(DirMessageOps.OPERATION_DIRFILES_OK);
+					response.setLast(true);
+					enviarPaquete(response, (InetSocketAddress)pkt.getSocketAddress());
+					
+				}else {
+					for(int i = 0; i < totalFiles; i += chunkSize) {
+						response = new DirMessage(DirMessageOps.OPERATION_DIRFILES_OK);
+						int fin = Math.min(i + chunkSize, totalFiles);
+						for( int j = i; j < fin; j ++) {
+							response.addFile(directoryFiles[j]);
+						}
+						response.setLast(fin == totalFiles);
+						enviarPaquete(response, (InetSocketAddress)pkt.getSocketAddress());
+					}
 				}
 			
 			break;
@@ -319,13 +342,13 @@ public class NFDirectoryServer {
 		 * (msgToSend) con el mensaje de respuesta a enviar, extraer los bytes en que se
 		 * codifica el string y finalmente enviarlos en un datagrama
 		 */
-
-		String responseString=response.toString();
-		byte[] responseData=responseString.getBytes();
-		InetSocketAddress clientAddr = (InetSocketAddress) pkt.getSocketAddress();
-		DatagramPacket responsePacket=new DatagramPacket(responseData, responseData.length, clientAddr);
-		socket.send(responsePacket);
-		
+		if(!operation.equals(DirMessageOps.OPERATION_DIRFILES_OK)) {
+			String responseString=response.toString();
+			byte[] responseData=responseString.getBytes();
+			InetSocketAddress clientAddr = (InetSocketAddress) pkt.getSocketAddress();
+			DatagramPacket responsePacket=new DatagramPacket(responseData, responseData.length, clientAddr);
+			socket.send(responsePacket);
+		}	
 
 	}
 

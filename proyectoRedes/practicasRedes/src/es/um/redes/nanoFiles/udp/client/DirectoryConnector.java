@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import es.um.redes.nanoFiles.tcp.client.NFConnector;
 
@@ -324,19 +325,23 @@ public class DirectoryConnector {
 	 *         pudo satisfacer nuestra solicitud
 	 */
 	public FileInfo[] getFileList() {
-		FileInfo[] filelist = new FileInfo[0];
+		ArrayList<FileInfo> filelist = new ArrayList<>();
 		// TODO: Ver TODOs en pingDirectory y seguir esquema similar
-
-		DirMessage request=new DirMessage(DirMessageOps.OPERATION_DIRFILES);
-		byte[] requestString=request.toString().getBytes();
-		byte[] responseString=sendAndReceiveDatagrams(requestString);
-		DirMessage response=DirMessage.fromString(new String(responseString));
-		
-		if(response.getOperation().equals(DirMessageOps.OPERATION_DIRFILES_OK)) {
-			System.out.println("Dirfiles succesful");
-			filelist=response.getFileList().toArray(FileInfo[]::new);
+		boolean isLast = false;
+		while( !isLast ) {
+			DirMessage request=new DirMessage(DirMessageOps.OPERATION_DIRFILES);
+			byte[] requestString=request.toString().getBytes();
+			byte[] responseString=sendAndReceiveDatagrams(requestString);
+			DirMessage response=DirMessage.fromString(new String(responseString));
+				
+			if(response.getOperation().equals(DirMessageOps.OPERATION_DIRFILES_OK)) {
+				filelist.addAll(response.getFileList());
+				isLast = response.getLast();
+			}else {
+				isLast = true;
+			}
 		}
-		return filelist;
+		return filelist.toArray(new FileInfo[0]);
 	}
 
 	public Map<String, InetSocketAddress> getPeerList() {
