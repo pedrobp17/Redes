@@ -18,6 +18,7 @@ public class DirMessageOps {
 	public static final String OPERATION_SERVE_ERROR="serve_error";
 	public static final String OPERATION_PEERS="peers";
 	public static final String OPERATION_PEERS_OK="peers_ok";
+	public static final String OPERATION_QUIT="quit";
 	
 	// TODO: definir las operaciones del protocolo de directorio
 
