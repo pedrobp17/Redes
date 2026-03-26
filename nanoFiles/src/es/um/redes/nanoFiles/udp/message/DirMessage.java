@@ -32,6 +32,7 @@ public class DirMessage {
 	private static final String FIELDNAME_FILE="file";
 	private static final String FIELDNAME_LAST="last";
 	private static final String FIELDNAME_SERVER="server";
+	private static final String FIELDNAME_SERVER_NICKNAME="server_nickname";
 	private static final String FIELDNAME_PEER="peer";
 	
 	/*
@@ -203,8 +204,6 @@ public class DirMessage {
 			}
 			case FIELDNAME_SERVER: {
 				
-				//TODO verificar que no se accedan a posiciones indebidas del array
-				
 				values=value.split(",");
 				
 				if(values.length==3) {
@@ -217,6 +216,10 @@ public class DirMessage {
 				
 				break;
 				
+			}
+			case FIELDNAME_SERVER_NICKNAME: {
+				m.setServerNickname(value);
+				break;
 			}
 			case FIELDNAME_PEER: {
 				
@@ -278,6 +281,12 @@ public class DirMessage {
 			}
 			case DirMessageOps.OPERATION_SERVE: {
 				sb.append(FIELDNAME_SERVER + DELIMITER + serverNickname + "," + serverAddress.getHostString() + "," + serverAddress.getPort() + END_LINE);
+				break;
+			}
+			case DirMessageOps.OPERATION_SERVE_OK: {
+				
+				sb.append(FIELDNAME_SERVER_NICKNAME + DELIMITER + serverNickname + END_LINE);
+				
 				break;
 			}
 			case DirMessageOps.OPERATION_PEERS_OK: {

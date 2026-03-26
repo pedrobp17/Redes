@@ -312,9 +312,25 @@ public class NFDirectoryServer {
 			break;
 		}
 		case DirMessageOps.OPERATION_SERVE: {
-			if(!registeredPeers.containsKey(request.getServerNickname())) {
-				registeredPeers.put(request.getServerNickname(), request.getServerAddress());
+			
+			String requestNickname=request.getServerNickname();
+			InetSocketAddress requestAddress=request.getServerAddress();
+			
+			if(!registeredPeers.containsKey(requestNickname)) {
+				registeredPeers.put(requestNickname, requestAddress);
 				response=new DirMessage(DirMessageOps.OPERATION_SERVE_OK);
+				
+				response.setServerNickname(requestNickname); 
+			}
+			else if(!registeredPeers.get(requestNickname).equals(requestAddress)){
+				while (registeredPeers.containsKey(requestNickname)) {
+					requestNickname=NickGenerator.randomNickname();
+				}
+				
+				registeredPeers.put(requestNickname, requestAddress);
+				response=new DirMessage(DirMessageOps.OPERATION_SERVE_OK);
+				
+				response.setServerNickname(requestNickname); //pasamos el nickname final con el que se ha registrado el server
 			}
 			else {
 				response=new DirMessage(DirMessageOps.OPERATION_SERVE_ERROR);

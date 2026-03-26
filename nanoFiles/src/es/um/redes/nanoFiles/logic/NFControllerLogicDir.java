@@ -130,7 +130,8 @@ public class NFControllerLogicDir {
 		boolean result = false;
 		if (this.directoryConnector.registerFileServer(serverPort)) {
 
-
+			//aqui no hay que cambiar nada para la colision de nombres
+			// se hace en el NFDirectoryServer
 
 			System.out.println("* File server successfully registered with the directory");
 			result = true;
