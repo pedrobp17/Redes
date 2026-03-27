@@ -60,7 +60,7 @@ public class DirMessage {
 	private List<FileInfo> fileList;
 
 	private String serverNickname;
-	private InetSocketAddress serverAddress;
+	private int serverPort;
 
 	private Map<String, InetSocketAddress> peerList;
 	
@@ -128,12 +128,12 @@ public class DirMessage {
 		return serverNickname;
 	}
 	
-	public void setServerAddress(InetSocketAddress sa) {
-		serverAddress=sa;
+	public void setServerPort(int sp) {
+		serverPort=sp;
 	}
 	
-	public InetSocketAddress getServerAddress() {
-		return serverAddress;
+	public int getServerPort() {
+		return serverPort;
 	}
 
 	public void addPeerList(String key, InetSocketAddress value) {
@@ -206,9 +206,9 @@ public class DirMessage {
 				
 				values=value.split(",");
 				
-				if(values.length==3) {
+				if(values.length==2) {
 					m.setServerNickname(values[0]);
-					m.setServerAddress(new InetSocketAddress(values[1], Integer.parseInt(values[2])));
+					m.setServerPort(Integer.parseInt(values[1]));
 				}
 				else {
 					throw new IllegalArgumentException("The message format is incorrect");
@@ -280,7 +280,7 @@ public class DirMessage {
 				break;
 			}
 			case DirMessageOps.OPERATION_SERVE: {
-				sb.append(FIELDNAME_SERVER + DELIMITER + serverNickname + "," + serverAddress.getHostString() + "," + serverAddress.getPort() + END_LINE);
+				sb.append(FIELDNAME_SERVER + DELIMITER + serverNickname + "," + serverPort + END_LINE);
 				break;
 			}
 			case DirMessageOps.OPERATION_SERVE_OK: {

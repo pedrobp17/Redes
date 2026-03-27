@@ -299,15 +299,15 @@ public class DirectoryConnector {
 
 		DirMessage request=new DirMessage(DirMessageOps.OPERATION_SERVE);
 		request.setServerNickname(NanoFiles.peerNickname);
-		request.setServerAddress(new InetSocketAddress(serverPort)); //TODO: usar serverPort y no eso
+		request.setServerPort(serverPort); 
 		byte[] requestString=request.toString().getBytes();
 		byte[] responseString=sendAndReceiveDatagrams(requestString);
 		DirMessage response=DirMessage.fromString(new String(responseString));
 		
 		if(response.getOperation().equals(DirMessageOps.OPERATION_SERVE_OK)) {
-			System.out.println("Serve succesful");
-			System.out.println("Servidor registrado con nick: "+response.getServerNickname());
 			
+			NanoFiles.peerNickname=response.getServerNickname();			
+			System.out.println("Serve succesful");			
 			
 			success=true;
 		}

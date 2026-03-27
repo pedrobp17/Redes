@@ -314,7 +314,7 @@ public class NFDirectoryServer {
 		case DirMessageOps.OPERATION_SERVE: {
 			
 			String requestNickname=request.getServerNickname();
-			InetSocketAddress requestAddress=request.getServerAddress();
+			InetSocketAddress requestAddress=new InetSocketAddress(pkt.getAddress(), request.getServerPort()); //obtenemos la dirección IP de la que viene el paquete
 			
 			if(!registeredPeers.containsKey(requestNickname)) {
 				registeredPeers.put(requestNickname, requestAddress);

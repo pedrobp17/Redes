@@ -1,0 +1,7 @@
+--> He dejado lo de la colisión de nombres como estaba, aunque moviendo alguna cosa a NFControllerLogicDir para cumplir con lo que pide el boletín, no afecta al autómata.
+
+--> He cambiado la lógica de serve para cumplir con lo que nos puso el profesor, ahora se le pasa como parámetro el puerto y DirMessage solo guarda el puerto como atributo,
+cuando necesitamos la dirección IP que es para registrarlo como peer, es en NFDirectoryServer, donde tenemos como parámetro el paquete y podemos obtener la IP de allí
+(y el puerto del mensaje), como pide el profesor.
+
+--> Modifica este archivo, borrando todo esto, cuando me quieras poner algún cambio que hayas hecho, así uno puede saber exactamente lo que ha tocado el otro cuando se ponga.

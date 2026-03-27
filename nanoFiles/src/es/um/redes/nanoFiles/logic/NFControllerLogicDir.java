@@ -128,12 +128,17 @@ public class NFControllerLogicDir {
 	 */
 	protected boolean registerFileServer(int serverPort) {
 		boolean result = false;
+		
+		String nickOriginal=NanoFiles.peerNickname;
+		
 		if (this.directoryConnector.registerFileServer(serverPort)) {
 
-			//aqui no hay que cambiar nada para la colision de nombres
-			// se hace en el NFDirectoryServer
-
-			System.out.println("* File server successfully registered with the directory");
+			if(!nickOriginal.equals(NanoFiles.peerNickname)) {
+				System.out.println("Nickname colission detected; file server successfully registered with the directory with nickname: "+NanoFiles.peerNickname);
+			}
+			else {
+				System.out.println("* File server successfully registered with the directory");
+			}
 			result = true;
 		} else {
 			System.err.println("* File server failed to register with the directory");
