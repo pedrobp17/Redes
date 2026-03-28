@@ -15,7 +15,13 @@ public class PeerMessageOps {
 
 	public static final byte OPCODE_PEER_FILES_REQ=1;
 	public static final byte OPCODE_PEER_FILES_REPLY=2;
-
+	public static final byte OPCODE_PEER_FILES_ERROR=8;
+	public static final byte OPCODE_PEER_FILE_DL_REQ=3;
+	public static final byte OPCODE_PEER_FILE_DL_REPLY=4;
+	public static final byte OPCODE_PEER_FILE_DL_FILE=5;
+	public static final byte OPCODE_PEER_FILE_DL_DATA=6;
+	public static final byte OPCODE_PEER_FILE_DL_ERROR=7;
+	
 
 	/*
 	 * TODO: (Boletín MensajesBinarios) Definir constantes con nuevos opcodes de
@@ -24,13 +30,24 @@ public class PeerMessageOps {
 	 */
 	private static final Byte[] _valid_opcodes = { OPCODE_INVALID_CODE,
 			OPCODE_PEER_FILES_REQ,
-			OPCODE_PEER_FILES_REPLY
-
+			OPCODE_PEER_FILES_REPLY,
+			OPCODE_PEER_FILES_ERROR,
+			OPCODE_PEER_FILE_DL_REQ,
+			OPCODE_PEER_FILE_DL_REPLY,
+			OPCODE_PEER_FILE_DL_FILE,
+			OPCODE_PEER_FILE_DL_DATA,
+			OPCODE_PEER_FILE_DL_ERROR
 
 	};
 	private static final String[] _valid_operations_str = { "INVALID_OPCODE",
 			"PEER_FILES_REQ",
-			"PEER_FILES_REPLY"
+			"PEER_FILES_REPLY",
+			"PEER_FILES_ERROR",
+			"PEER_FILE_DL_REQ",
+			"PEER_FILE_DL_REPLY",
+			"PEER_FILE_DL_FILE",
+			"PEER_FILE_DL_DATA",
+			"PEER_FILE_DL_ERROR"
 
 
 	};

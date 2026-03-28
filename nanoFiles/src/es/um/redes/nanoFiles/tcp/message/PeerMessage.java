@@ -21,6 +21,11 @@ public class PeerMessage {
 
 	private FileInfo[] peerfiles;
 	
+	private String subHash;
+	private long offset;
+	private int length;
+	private String fileName; //para devolver el nombre del archivo junto a data
+	private byte[] data;
 
 	public PeerMessage() {
 		opcode = PeerMessageOps.OPCODE_INVALID_CODE;
@@ -30,6 +35,34 @@ public class PeerMessage {
 		opcode = op;
 	}
 
+	public PeerMessage(byte op, FileInfo[] ficheros) {
+		assert(op == PeerMessageOps.OPCODE_PEER_FILES_REPLY);
+		this.opcode = op;
+		this.peerfiles = ficheros;
+	}
+	
+	public PeerMessage(byte op, String hash) {
+		assert(op == PeerMessageOps.OPCODE_PEER_FILE_DL_REQ || op == PeerMessageOps.OPCODE_PEER_FILE_DL_REPLY);
+		this.opcode = op;
+		this.subHash = hash;
+	}
+
+	
+	public PeerMessage(byte opcode, String fullHash, int offset, int length) {
+		assert(opcode == PeerMessageOps.OPCODE_PEER_FILE_DL_FILE);
+		this.opcode = opcode;
+		this.offset = offset;
+		this.length = length;
+		this.subHash = fullHash;
+	}
+
+	public PeerMessage(byte opcode, String fileName, byte[] data) {
+		assert(opcode == PeerMessageOps.OPCODE_PEER_FILE_DL_DATA);
+		this.opcode = opcode;
+		this.fileName=fileName;
+		this.data = data;
+	}
+	
 	/*
 	 * TODO: (Boletín MensajesBinarios) Crear métodos getter y setter para obtener
 	 * los valores de los atributos de un mensaje. Se aconseja incluir código que
@@ -48,8 +81,46 @@ public class PeerMessage {
 		peerfiles=candidate.clone();
 	}
 
+	public String getSubHash() {
+		return subHash;
+	}
+	
+	public void setSubHash(String h) {
+		subHash=h;
+	}
+	
+	public long getOffset() {
+		return offset;
+	}
+	
+	public void setOffset(long o) {
+		offset=o;
+	}
+	
+	public int getLength() {
+		return length;
+	}
 
-
+	public void setLength(int l) {
+		length=l;
+	}
+	
+	public String getFileName() {
+		return fileName;
+	}
+	
+	public void setFileName(String n) {
+		fileName=n;
+	}
+	
+	public byte[] getData() {
+		return data.clone();
+	}
+	
+	public void setData(byte[] d) {
+		data=d.clone();
+	}
+	
 	/**
 	 * Método de clase para parsear los campos de un mensaje y construir el objeto
 	 * DirMessage que contiene los datos del mensaje recibido
@@ -81,7 +152,42 @@ public class PeerMessage {
 				message.setPeerFilesList(FileInfo.deserializeList(bFiles));
 				break;
 			}
-			
+			case PeerMessageOps.OPCODE_PEER_FILE_DL_REQ: {
+				int tam=dis.readInt();
+				byte[] bSubHash=new byte[tam];
+				dis.readFully(bSubHash);
+				message.setSubHash(new String(bSubHash));
+				break;
+			}
+			case PeerMessageOps.OPCODE_PEER_FILE_DL_REPLY: {
+				int tam=dis.readInt();
+				byte[] bHash=new byte[tam];
+				dis.readFully(bHash);
+				message.setSubHash(new String(bHash));
+				break;
+			}
+			case PeerMessageOps.OPCODE_PEER_FILE_DL_FILE: {
+				int tam=dis.readInt();
+				byte[] bHashFile=new byte[tam];
+				dis.readFully(bHashFile);
+				message.setSubHash(new String(bHashFile));
+				message.setOffset(dis.readLong());
+				message.setLength(dis.readInt());
+				break;
+			}
+			case PeerMessageOps.OPCODE_PEER_FILE_DL_DATA: {
+				int tam=dis.readInt();
+				byte[] bName=new byte[tam];
+				dis.readFully(bName);
+				message.setFileName(new String(bName));
+				
+				tam=dis.readInt();
+				byte[] bData=new byte[tam];
+				dis.readFully(bData);
+				message.setData(bData);
+				
+				break;
+			}
 
 		default:
 			System.err.println("PeerMessage.readMessageFromInputStream doesn't know how to parse this message opcode: "
@@ -110,6 +216,35 @@ public class PeerMessage {
 				byte[] bFiles=FileInfo.serializeList(peerfiles);
 				dos.writeInt(bFiles.length);
 				dos.write(bFiles);
+				break;
+			}
+			case PeerMessageOps.OPCODE_PEER_FILE_DL_REQ: {
+				byte[] bSubHash=getSubHash().getBytes();
+				dos.writeInt(bSubHash.length);
+				dos.write(bSubHash);
+				break;
+			}
+			case PeerMessageOps.OPCODE_PEER_FILE_DL_REPLY: {
+				byte[] bHash=getSubHash().getBytes();
+				dos.writeInt(bHash.length);
+				dos.write(bHash);
+				break;
+			}
+			case PeerMessageOps.OPCODE_PEER_FILE_DL_FILE: {
+				byte[] bHashFile=getSubHash().getBytes();
+				dos.writeInt(bHashFile.length);
+				dos.write(bHashFile);
+				dos.writeLong(getOffset());
+				dos.writeInt(getLength());
+				break;
+			}
+			case PeerMessageOps.OPCODE_PEER_FILE_DL_DATA: { //TODO poner esto en la memoria
+				byte[] bName=getFileName().getBytes();
+				dos.writeInt(bName.length);
+				dos.write(bName);
+				byte[] bData=getData();
+				dos.writeInt(bData.length);
+				dos.write(bData);
 				break;
 			}
 			

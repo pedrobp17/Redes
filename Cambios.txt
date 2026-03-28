@@ -4,4 +4,12 @@
 cuando necesitamos la dirección IP que es para registrarlo como peer, es en NFDirectoryServer, donde tenemos como parámetro el paquete y podemos obtener la IP de allí
 (y el puerto del mensaje), como pide el profesor.
 
+--> Terminados mensajes binarios, hay que cambiar la memoria para ajustarse a como lo hace el profesor.
+
+--> Para solucionar el problema del nombre del archivo en PEER_FILES_DL_DATA he añadido un parámetro con el nombre, es decir, se envían el nombre y los datos.
+
+--> Todo funciona correctamente, comprobado con PeerMessageTest, he cambiado algunas cosas como la ruta relativa de dir-shared, ya que no me dejaba crear la carpeta en el workspace
+, y el subhash que se pone de ejemplo para que este realmente coincida con el de uno de los archivos y poder probar que todos los comandos funcionan, igual tu en tu ordenador lo
+tienes que volver a cambiar (segundo parámetro de la función de la línea 75 de PeerMessageTest
+
 --> Modifica este archivo, borrando todo esto, cuando me quieras poner algún cambio que hayas hecho, así uno puede saber exactamente lo que ha tocado el otro cuando se ponga.
