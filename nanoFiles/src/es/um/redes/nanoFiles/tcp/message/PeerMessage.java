@@ -19,8 +19,8 @@ public class PeerMessage {
 	 * 
 	 */
 
-
-
+	private FileInfo[] peerfiles;
+	
 
 	public PeerMessage() {
 		opcode = PeerMessageOps.OPCODE_INVALID_CODE;
@@ -40,7 +40,13 @@ public class PeerMessage {
 		return opcode;
 	}
 
+	public FileInfo[] getPeerFilesList() {
+		return peerfiles.clone();
+	}
 
+	public void setPeerFilesList(FileInfo[] candidate) {
+		peerfiles=candidate.clone();
+	}
 
 
 
@@ -62,11 +68,20 @@ public class PeerMessage {
 		 * Usar dis.readFully para leer un array de bytes, dis.readInt para leer un
 		 * entero, etc.
 		 */
-		PeerMessage message = new PeerMessage();
 		byte opcode = dis.readByte();
+		PeerMessage message = new PeerMessage(opcode);
 		switch (opcode) {
-
-
+			case PeerMessageOps.OPCODE_PEER_FILES_REQ: {
+				break;
+			}
+			case PeerMessageOps.OPCODE_PEER_FILES_REPLY: {
+				int tam=dis.readInt();
+				byte[] bFiles=new byte[tam];
+				dis.readFully(bFiles);
+				message.setPeerFilesList(FileInfo.deserializeList(bFiles));
+				break;
+			}
+			
 
 		default:
 			System.err.println("PeerMessage.readMessageFromInputStream doesn't know how to parse this message opcode: "
@@ -88,7 +103,16 @@ public class PeerMessage {
 		dos.writeByte(opcode);
 		switch (opcode) {
 
-
+			case PeerMessageOps.OPCODE_PEER_FILES_REQ: {
+				break;
+			}
+			case PeerMessageOps.OPCODE_PEER_FILES_REPLY: {
+				byte[] bFiles=FileInfo.serializeList(peerfiles);
+				dos.writeInt(bFiles.length);
+				dos.write(bFiles);
+				break;
+			}
+			
 
 
 		default:

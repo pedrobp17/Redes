@@ -13,7 +13,8 @@ public class PeerMessageOps {
 	 * servidor de ficheros (valores posibles del campo "operation").
 	 */
 
-
+	public static final byte OPCODE_PEER_FILES_REQ=1;
+	public static final byte OPCODE_PEER_FILES_REPLY=2;
 
 
 	/*
@@ -22,12 +23,14 @@ public class PeerMessageOps {
 	 * su representación textual a "valid_operations_str" EN EL MISMO ORDEN.
 	 */
 	private static final Byte[] _valid_opcodes = { OPCODE_INVALID_CODE,
-
+			OPCODE_PEER_FILES_REQ,
+			OPCODE_PEER_FILES_REPLY
 
 
 	};
 	private static final String[] _valid_operations_str = { "INVALID_OPCODE",
-
+			"PEER_FILES_REQ",
+			"PEER_FILES_REPLY"
 
 
 	};
