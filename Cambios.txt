@@ -13,3 +13,9 @@ cuando necesitamos la dirección IP que es para registrarlo como peer, es en NFD
 tienes que volver a cambiar (segundo parámetro de la función de la línea 75 de PeerMessageTest
 
 --> Modifica este archivo, borrando todo esto, cuando me quieras poner algún cambio que hayas hecho, así uno puede saber exactamente lo que ha tocado el otro cuando se ponga.
+
+--> Igual deberiamos hacer la mejora del quit, que el peer deje de ser servidor
+
+--> He avanzado en SocketsTCP, falta programar la lógica de NFControllerLogicP2P y NFConnector de forma análoga a como se hace en NFControllerLogicDir y DirectoryConnector
+
+--> También falta algo de recurrencia en NFServer

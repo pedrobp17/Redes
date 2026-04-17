@@ -1,9 +1,19 @@
 package es.um.redes.nanoFiles.tcp.server;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Date;
 
+import es.um.redes.nanoFiles.application.NanoFiles;
+import es.um.redes.nanoFiles.tcp.message.PeerMessage;
+import es.um.redes.nanoFiles.tcp.message.PeerMessageOps;
+import es.um.redes.nanoFiles.util.FileInfo;
+import es.um.redes.nanoFiles.util.FileDatabase;
 
 
 
@@ -20,11 +30,18 @@ public class NFServer implements Runnable {
 		 * TODO: (Boletín SocketsTCP) Crear una direción de socket a partir del puerto
 		 * especificado (PORT)
 		 */
+		
+		InetSocketAddress address=new InetSocketAddress(PORT);
+		
 		/*
 		 * TODO: (Boletín SocketsTCP) Crear un socket servidor y ligarlo a la dirección
 		 * de socket anterior
 		 */
 
+		serverSocket=new ServerSocket();
+		serverSocket.bind(address);
+		
+		System.out.println("Server is listening on port: "+PORT);
 
 
 	}
@@ -50,13 +67,30 @@ public class NFServer implements Runnable {
 			 * TODO: (Boletín SocketsTCP) Usar el socket servidor para esperar conexiones de
 			 * otros peers que soliciten descargar ficheros.
 			 */
+			
+			try {
+				Socket socket = serverSocket.accept();
+				System.out.println("\nNew client connected: " +
+					socket.getInetAddress().toString() + ":" + socket.getPort());	
+				
+				DataOutputStream dos=new DataOutputStream(socket.getOutputStream());
+				DataInputStream dis=new DataInputStream(socket.getInputStream());
+				
+				dos.writeInt(dis.readInt()); //para el test del entero
+				
+				serveFilesToClient(socket);
+			}
+			catch(IOException e) {
+				System.out.println("Server exception: "+ e.getMessage());
+				e.printStackTrace();
+			}
+			
 			/*
 			 * TODO: (Boletín SocketsTCP) Tras aceptar la conexión con un peer cliente, la
 			 * comunicación con dicho cliente para servir los ficheros solicitados se debe
 			 * implementar en el método serveFilesToClient, al cual hay que pasarle el
 			 * socket devuelto por accept.
 			 */
-
 
 
 		}
@@ -79,6 +113,31 @@ public class NFServer implements Runnable {
 		 * serveFilesToClient(socket), al cual hay que pasarle el socket devuelto por
 		 * accept
 		 */
+		
+		if (serverSocket == null || !serverSocket.isBound()) {
+			System.err.println(
+					"Failed to run file server, server socket is null or not bound to any port");
+			return;
+		} else {
+			System.out
+					.println("NFServer running on " + serverSocket.getLocalSocketAddress() + ".");
+		}
+
+		while (true) {
+			
+			try {
+				Socket socket = serverSocket.accept();
+				System.out.println("\nNew client connected: " +
+					socket.getInetAddress().toString() + ":" + socket.getPort());	
+				
+				serveFilesToClient(socket);
+			}
+			catch(IOException e) {
+				System.out.println("Server exception: "+ e.getMessage());
+				e.printStackTrace();
+			}
+		}
+		
 		/*
 		 * TODO: (Boletín TCPConcurrente) Crear un hilo nuevo de la clase
 		 * NFServerThread, que llevará a cabo la comunicación con el cliente que se
@@ -112,6 +171,91 @@ public class NFServer implements Runnable {
 		/*
 		 * TODO: (Boletín SocketsTCP) Crear dis/dos a partir del socket
 		 */
+		
+		try {
+		
+			DataInputStream dis = new DataInputStream(socket.getInputStream());
+			DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+			
+			while(socket.isConnected()) {
+				PeerMessage messageFromClient= PeerMessage.readMessageFromInputStream(dis);
+				byte op=messageFromClient.getOpcode();
+				
+				switch(op) {
+					case PeerMessageOps.OPCODE_PEER_FILES_REQ: {
+						
+						FileInfo[] peerFiles=NanoFiles.db.getFiles();
+						PeerMessage messageToClient=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILES_REPLY, peerFiles);
+						messageToClient.writeMessageToOutputStream(dos);
+						
+						
+						break;
+					}
+					case PeerMessageOps.OPCODE_PEER_FILE_DL_REQ: {
+						
+						String subHash=messageFromClient.getSubHash();
+						FileInfo[] peerFiles=NanoFiles.db.getFiles();
+						FileInfo[] matchingFiles=FileInfo.lookupHashSubstring(peerFiles, subHash);
+						
+						if(matchingFiles.length==1) {
+							PeerMessage messageToClient=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_REPLY, matchingFiles[0].fileHash);
+							messageToClient.writeMessageToOutputStream(dos);
+						}
+						else {
+							PeerMessage messageToClient=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_ERROR);
+							messageToClient.writeMessageToOutputStream(dos);
+						}
+						
+						break;
+					}
+					case PeerMessageOps.OPCODE_PEER_FILE_DL_FILE: {
+						
+						String hash=messageFromClient.getSubHash();
+						long offset=messageFromClient.getOffset();
+						int length=messageFromClient.getLength();
+						
+						FileInfo[] peerFiles=NanoFiles.db.getFiles();
+						FileInfo[] matchingFiles=FileInfo.lookupHashSubstring(peerFiles, hash);
+						
+						if(matchingFiles.length==1) {
+							
+							FileInfo fichero=matchingFiles[0];
+							int cantidad= (int) Math.min(length, fichero.fileSize - offset);
+							System.out.println("Cantidad a leer: "+cantidad);
+							
+							RandomAccessFile f=new RandomAccessFile(fichero.filePath, "r");
+							byte[] data=new byte[cantidad];
+							
+							f.seek(offset);
+							f.readFully(data);
+							f.close();
+							
+							PeerMessage messageToClient=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_DATA, fichero.fileName, data);
+							messageToClient.writeMessageToOutputStream(dos);
+							
+						}
+						else {
+							PeerMessage messageToClient=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_ERROR);
+							messageToClient.writeMessageToOutputStream(dos);
+						}
+						
+						
+						
+					}
+					default: {
+						
+						System.err.println("Invalid message format");
+						
+						break;
+					}
+					
+				}
+			}
+		}
+		catch(IOException e) {
+			System.out.println("Server exception: "+e.getMessage());
+			e.printStackTrace();
+		}
 		/*
 		 * TODO: (Boletín SocketsTCP) Mientras el cliente esté conectado, leer mensajes
 		 * de socket, convertirlo a un objeto PeerMessage y luego actuar en función del
