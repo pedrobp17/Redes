@@ -22,7 +22,7 @@ public class NFServer implements Runnable {
 	public static final int PORT = 10000;
 
 
-
+	private Thread serverThread; //no se si es del todo correcto, preguntar al profesor
 	private ServerSocket serverSocket = null;
 
 	public NFServer() throws IOException {
@@ -123,19 +123,19 @@ public class NFServer implements Runnable {
 					.println("NFServer running on " + serverSocket.getLocalSocketAddress() + ".");
 		}
 
-		while (true) {
-			
-			try {
-				Socket socket = serverSocket.accept();
-				System.out.println("\nNew client connected: " +
-					socket.getInetAddress().toString() + ":" + socket.getPort());	
-				
-				serveFilesToClient(socket);
+		
+		try {
+			while (true) {
+					Socket socket = serverSocket.accept();
+					System.out.println("\nNew client connected: " +
+						socket.getInetAddress().toString() + ":" + socket.getPort());	
+					
+					serveFilesToClient(socket);
 			}
-			catch(IOException e) {
-				System.out.println("Server exception: "+ e.getMessage());
-				e.printStackTrace();
-			}
+		}
+		catch(IOException e) {
+			System.out.println("Server exception: "+ e.getMessage());
+			e.printStackTrace();
 		}
 		
 		/*
@@ -157,9 +157,40 @@ public class NFServer implements Runnable {
 	 * servidor (stopserver) 3) Obtener el puerto de escucha del servidor etc.
 	 */
 
+	public void startServer() {
+		
+		if(serverThread==null || !serverThread.isAlive()) {
+			serverThread=new Thread(this); //de nuevo, no se si esto es del todo correcto
+			serverThread.start();
+			System.out.println("Server started running");
+		}
+		else {
+			System.out.println("Server is already running");
+		}
+		
+	}
+	
+	public void stopServer() {//vale con cerrar el socket, ya que lanzara una excepcion y terminara el bucle de run
+		
+		try {
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+                System.out.println("Server stopped");
+            }
+        } catch (IOException e) {
+            System.err.println("Error while stopping server: " + e.getMessage());
+        }
+		
+	}
 
+	public int getServerPort(){
+		return PORT;
+	}
 
-
+	public boolean isActive() {
+		return serverThread.isAlive();
+	}
+	
 	/**
 	 * Método de clase que implementa el extremo del servidor del protocolo de
 	 * transferencia de ficheros entre pares.
@@ -202,6 +233,13 @@ public class NFServer implements Runnable {
 							messageToClient.writeMessageToOutputStream(dos);
 						}
 						else {
+							
+							System.out.println("Several files match the subhash: ");
+
+							for(FileInfo f : matchingFiles) {
+								System.out.println(f.fileName + " con hash: "+f.fileHash);
+							}
+							
 							PeerMessage messageToClient=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_ERROR);
 							messageToClient.writeMessageToOutputStream(dos);
 						}

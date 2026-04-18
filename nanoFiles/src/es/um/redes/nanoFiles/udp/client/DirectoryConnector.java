@@ -7,8 +7,12 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
+
 import es.um.redes.nanoFiles.tcp.client.NFConnector;
 
 import es.um.redes.nanoFiles.application.NanoFiles;
@@ -365,6 +369,34 @@ public class DirectoryConnector {
 	public Map<String, InetSocketAddress[]> searchFilesByHash(String hashSubstring) {
 		Map<String, InetSocketAddress[]> results = new LinkedHashMap<String, InetSocketAddress[]>();
 
+		Map<String, InetSocketAddress> serverPeers=getPeerList();
+		NFConnector connector;
+		FileInfo[] fileList;
+		
+		for(String server : serverPeers.keySet()) {
+			try {
+				connector=new NFConnector(serverPeers.get(server));
+				fileList=connector.getPeerFilesList();
+				List<FileInfo> matchingFiles=Arrays.stream(fileList)
+						.filter(f -> f.fileHash.contains(hashSubstring))
+						.collect(Collectors.toList());
+				
+				for(FileInfo f : matchingFiles) {
+					InetSocketAddress[] addresses=results
+							.putIfAbsent(f.fileHash, new InetSocketAddress[]{serverPeers.get(server)});
+					
+					if(addresses!=null) {
+						List<InetSocketAddress> aux=new ArrayList<>(Arrays.asList(addresses));
+						aux.add(serverPeers.get(server));
+						results.put(f.fileHash, aux.toArray(InetSocketAddress[]::new));
+					}
+				}
+				
+			}
+			catch(IOException e) {
+				System.err.println(e.getMessage());
+			}
+		}
 		
 
 
@@ -396,9 +428,6 @@ public class DirectoryConnector {
 
 		return success;
 	}
-
-
-
 
 
 }

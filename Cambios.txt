@@ -19,3 +19,9 @@ tienes que volver a cambiar (segundo parámetro de la función de la línea 75 d
 --> He avanzado en SocketsTCP, falta programar la lógica de NFControllerLogicP2P y NFConnector de forma análoga a como se hace en NFControllerLogicDir y DirectoryConnector
 
 --> También falta algo de recurrencia en NFServer
+
+--> Terminado SocketsTCP y la mejora opcional de peerdl
+
+--> HAY QUE HACER LO DE MANDAR POR CHUNKS EN PEERDL Y DONDE HAGA FALTA
+
+--> Nos faltaria hacer el dirdl básico para optar al 10

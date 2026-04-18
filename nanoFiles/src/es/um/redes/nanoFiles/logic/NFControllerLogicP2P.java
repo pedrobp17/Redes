@@ -1,6 +1,11 @@
 package es.um.redes.nanoFiles.logic;
 
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.io.IOException;
 import es.um.redes.nanoFiles.tcp.client.NFConnector;
 import es.um.redes.nanoFiles.application.NanoFiles;
@@ -8,6 +13,7 @@ import es.um.redes.nanoFiles.application.NanoFiles;
 
 
 import es.um.redes.nanoFiles.tcp.server.NFServer;
+import es.um.redes.nanoFiles.util.FileInfo;
 
 public class NFControllerLogicP2P {
 	// Servidor TCP local para compartir ficheros con otros peers
@@ -113,7 +119,22 @@ public class NFControllerLogicP2P {
 	protected boolean listPeerFiles(InetSocketAddress peerAddr) {
 		boolean success = false;
 
-
+		
+		try {
+			NFConnector connector=new NFConnector(peerAddr);
+			FileInfo[] list=connector.getPeerFilesList();
+			
+			if(list!=null) {
+				System.out.println(list);
+				success=true;
+			}
+			else {
+				success=false;
+			}
+		} 
+		catch (IOException e) {
+			System.err.println(e.getMessage());
+		}
 
 		return success;
 	}
@@ -129,8 +150,37 @@ public class NFControllerLogicP2P {
 		// downloadFileFromServers
 		boolean success = false;
 
-
-
+		if(targetPeerNickname.equals("*")) {
+			
+			Map<String, InetSocketAddress[]> matchingFilesAndPeers=dirLogic.searchFilesByHash(targetHashSubstring);
+			
+			if(matchingFilesAndPeers==null || matchingFilesAndPeers.isEmpty()) {
+				System.out.println("No file matching this subhash");
+				return false;
+			}
+			
+			List<InetSocketAddress> aux= new ArrayList<>();
+			
+			for(InetSocketAddress[] peersForThisHash : matchingFilesAndPeers.values()) {
+				aux.addAll(Arrays.asList(peersForThisHash));
+			}
+			
+			success=downloadFileFromServers(aux.toArray(InetSocketAddress[]::new), targetHashSubstring);
+			
+		}
+		else {
+			InetSocketAddress serverAddress=dirLogic.fetchPeerList().get(targetPeerNickname);
+	
+			if(serverAddress.equals(null)) {
+				System.out.println("Enter a valid nickname");
+				success=false;
+			}
+			else {
+				InetSocketAddress[] address= {serverAddress};
+				success=downloadFileFromServers(address, targetHashSubstring);
+			}
+		}
+		
 		return success;
 	}
 
@@ -152,7 +202,18 @@ public class NFControllerLogicP2P {
 		// pedido, obtener nombre remoto, reservar nombre local sin colisiones, alternar
 		// descarga de chunks y verificar hash final. Cerrar los sockets al terminar.
 
-
+		NFConnector connector;
+		
+		for(InetSocketAddress serverAddress : serverAddressList) {
+			
+			try {
+				connector=new NFConnector(serverAddress);
+				downloaded=connector.downloadSubHash(targetHashSubstring);
+			}
+			catch(IOException e) {
+				System.err.println(e.getMessage());
+			}
+		}
 
 
 		return downloaded;

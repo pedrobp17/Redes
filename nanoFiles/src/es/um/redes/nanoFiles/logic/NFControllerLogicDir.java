@@ -116,6 +116,10 @@ public class NFControllerLogicDir {
 	protected Map<String, InetSocketAddress> fetchPeerList() {
 		return directoryConnector.getPeerList();
 	}
+	
+	protected Map<String, InetSocketAddress[]> searchFilesByHash(String subHash){
+		return directoryConnector.searchFilesByHash(subHash);
+	}
 
 	/**
 	 * Método para registrarse en el directorio como servidor de ficheros en un

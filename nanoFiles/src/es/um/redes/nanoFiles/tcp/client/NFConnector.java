@@ -2,12 +2,15 @@ package es.um.redes.nanoFiles.tcp.client;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import es.um.redes.nanoFiles.application.NanoFiles;
 import es.um.redes.nanoFiles.tcp.message.PeerMessage;
 import es.um.redes.nanoFiles.tcp.message.PeerMessageOps;
 import es.um.redes.nanoFiles.util.FileInfo;
@@ -66,9 +69,93 @@ public class NFConnector {
 		}
 	}
 
+	public FileInfo[] getPeerFilesList() {
+		
+		FileInfo[] response=null;
+		
+		PeerMessage messageToServer=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILES_REQ);
+		try {
+			messageToServer.writeMessageToOutputStream(dos);
+			PeerMessage messageFromServer=PeerMessage.readMessageFromInputStream(dis);
+			
+			if(messageFromServer.getOpcode()==PeerMessageOps.OPCODE_PEER_FILES_REPLY) {
+				
+				FileInfo[] filesList=messageFromServer.getPeerFilesList();
+				System.out.println("List obtained successfully");
+				response=filesList;
+			}
+			else {
+				System.out.println("Failed to obtained the files list");
+				response=null;
+			}
+			
+		} catch (IOException e) {
+			System.err.println(e.getMessage());
+		}
+		
+		
+		return null;
+		
+	}
 
+	public boolean downloadSubHash(String subHash) {
+		
+		boolean success=false;
+		
+		PeerMessage messageToServer=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_REQ, subHash);
+		
+		try {
+			messageToServer.writeMessageToOutputStream(dos);
+			PeerMessage messageFromServer=PeerMessage.readMessageFromInputStream(dis);
+			
+			if(messageFromServer.getOpcode()==PeerMessageOps.OPCODE_PEER_FILE_DL_REPLY) {
+				String completeHash=messageFromServer.getSubHash();
+				messageToServer=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_FILE, completeHash, 0, Integer.MAX_VALUE); //TODO cambiar esto si hacemos lo de lpos chunks
+				messageToServer.writeMessageToOutputStream(dos);
+				messageFromServer=PeerMessage.readMessageFromInputStream(dis);
+				
+				if(messageFromServer.getOpcode()==PeerMessageOps.OPCODE_PEER_FILE_DL_DATA) {
+					byte[] receivedData=messageFromServer.getData();
+					String localDirectory=NanoFiles.sharedDirname;
+					String fileName = messageFromServer.getFileName();
+					
+					File dir = new File(localDirectory);
+					File outputFile = new File(dir, fileName);
+					FileOutputStream fos = new FileOutputStream(outputFile, true); //el true es vital para los chunks, para que no sobreescriba
+					try { 
+					    fos.write(receivedData);
+					    System.out.println("Download succeded");
+					    success=true;
+					} 
+					catch (IOException e) {
+					    System.err.println("Disk writing error: " + e.getMessage());
+					    e.printStackTrace();
+					}
+					finally {
+						fos.close();
+					}
+					
+					
+				}
+				else {
+					System.out.println("Download failed");
+					success=false;
+				}
+				
+			}
+			else {
+				System.out.println("Download failed");
+				success=false;
+			}
+		}
+		catch(IOException e) {
+			System.err.println(e.getMessage());
+		}
 
+		return success;
+	}
 
+	
 
 	public InetSocketAddress getServerAddr() {
 		return serverAddr;
