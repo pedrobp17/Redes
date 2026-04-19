@@ -2,11 +2,15 @@ package es.um.redes.nanoFiles.udp.server;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.stream.Collectors;
 
 import es.um.redes.nanoFiles.application.Directory;
 import es.um.redes.nanoFiles.application.NanoFiles;
@@ -17,7 +21,7 @@ import es.um.redes.nanoFiles.util.NickGenerator;
 
 public class NFDirectoryServer {
 	
-	private static final int MAX_MSG_SIZE_BYTES = 1024; //He cambiado esto porque se cortaban los mensajes
+	private static final int MAX_CHUNK_SIZE=40000; //para cubrir fácil la base 64 y cabeceras
 	
 	/**
 	 * Número de puerto UDP en el que escucha el directorio
@@ -105,8 +109,10 @@ public class NFDirectoryServer {
 			 * TODO: (Boletín SocketsUDP) Recibimos a través del socket un datagrama
 			 */
 
-			byte[] recvBuf = new byte[MAX_MSG_SIZE_BYTES];
+			byte[] recvBuf = new byte[DirMessage.PACKET_MAX_SIZE];
 			datagramReceivedFromClient=new DatagramPacket(recvBuf, recvBuf.length);
+			
+			socket.setSoTimeout(2000);
 			
 			socket.receive(datagramReceivedFromClient);
 
@@ -347,7 +353,78 @@ public class NFDirectoryServer {
 			
 			break;
 		}
-
+		case DirMessageOps.OPERATION_DIRDL_REQ: {
+			String subHash=request.getSubHash();
+			FileInfo[] matchingFiles=Arrays.stream(directoryFiles).
+					filter(f -> f.fileHash.contains(subHash)).
+					collect(Collectors.toList()).
+					toArray(FileInfo[]::new);
+			if(matchingFiles.length==1) {
+				
+				File file=new File(matchingFiles[0].filePath);
+				long fileSize=matchingFiles[0].fileSize;
+				String fileHash=matchingFiles[0].fileHash;
+				String filaName=matchingFiles[0].fileName;
+				
+				long chunkNumber=Math.ceilDiv(fileSize, DirMessage.CHUNK_MAX_SIZE);
+				
+				long offset;
+				int cantidad;
+				long currentAck=-1;
+				DatagramPacket ack_pkt;
+				
+				RandomAccessFile f=new RandomAccessFile(file, "r");
+				
+				for(long i=0; i<chunkNumber; i++) {
+					
+					offset=DirMessage.CHUNK_MAX_SIZE * i;
+					cantidad=(int) Math.min(DirMessage.CHUNK_MAX_SIZE, fileSize - offset);
+					
+					byte[] dataToRead=new byte[cantidad];
+						
+					f.seek(offset);
+					f.readFully(dataToRead);
+					
+					while(currentAck!=i) {
+						
+						try {
+							response=new DirMessage(DirMessageOps.OPERATION_DIRDL_REPLY);
+							response.setBlockNumber(i);
+							response.setData(dataToRead);
+							
+							enviarPaquete(response, (InetSocketAddress)pkt.getSocketAddress());
+							ack_pkt=receiveDatagram();
+							request=DirMessage.fromString(new String(ack_pkt.getData(), 0, ack_pkt.getLength()));
+							
+							currentAck=request.getAckNumber();
+						}
+						catch(IOException e) { //esto tambien tiene en cuenta los timeout
+							response=new DirMessage(DirMessageOps.OPERATION_DIRDL_ERROR);
+							System.err.println(e.getMessage());
+						}
+					}
+					
+					System.out.println("Block "+ i + " successfully sent"); //TODO debug, lo quitamos al final
+						
+				}
+					
+				f.close();
+				
+				response=new DirMessage(DirMessageOps.OPERATION_DIRDL_OK);
+				response.setFileName(filaName);
+				response.setSubHash(subHash);
+				System.out.println("File sent successfully");
+				
+			}
+			else {
+				System.out.println("Serveral files contain the same subhash");
+				for(FileInfo f: matchingFiles) {
+					System.out.println(f.filePath + " with hash: " + f.fileHash);
+				}
+				response=new DirMessage(DirMessageOps.OPERATION_DIRDL_ERROR);
+			}
+			
+		}
 		default:
 			System.err.println("Unexpected message operation: \"" + operation + "\"");
 			System.exit(-1);

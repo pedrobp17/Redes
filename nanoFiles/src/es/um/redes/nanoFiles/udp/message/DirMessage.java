@@ -2,6 +2,7 @@ package es.um.redes.nanoFiles.udp.message;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -20,7 +21,8 @@ import es.um.redes.nanoFiles.util.FileInfo;
  */
 public class DirMessage {
 	public static final int PACKET_MAX_SIZE = 65507; // 65535 - 8 (UDP header) - 20 (IP header)
-
+	public static final int CHUNK_MAX_SIZE=40000;
+	
 	private static final char DELIMITER = ':'; // Define el delimitador
 	private static final char END_LINE = '\n'; // Define el carácter de fin de línea
 
@@ -34,6 +36,11 @@ public class DirMessage {
 	private static final String FIELDNAME_SERVER="server";
 	private static final String FIELDNAME_SERVER_NICKNAME="server_nickname";
 	private static final String FIELDNAME_PEER="peer";
+	private static final String FIELDNAME_SUBHASH="subhash";
+	private static final String FIELDNAME_FILENAME="file_name";
+	private static final String FIELDNAME_DATA="data";
+	private static final String FIELDNAME_BLOCK_NUMBER="block_number";
+	private static final String FIELDNAME_ACK_NUMBER="ack_number";
 	
 	/*
 	 * TODO: (Boletín MensajesASCII) Definir de manera simbólica los nombres de
@@ -63,6 +70,12 @@ public class DirMessage {
 	private int serverPort;
 
 	private Map<String, InetSocketAddress> peerList;
+	
+	private String subHash;
+	private String fileName;
+	private byte[] data;
+	private long blockNumber;
+	private long ackNumber;
 	
 	public DirMessage(String op) {
 		operation = op;
@@ -138,6 +151,46 @@ public class DirMessage {
 
 	public void addPeerList(String key, InetSocketAddress value) {
 		peerList.put(key, value);
+	}
+	
+	public String getSubHash() {
+		return subHash;
+	}
+	
+	public void setSubHash(String sh) {
+		subHash=sh;
+	}
+	
+	public String getFileName() {
+		return fileName;
+	}
+	
+	public void setFileName(String fn) {
+		fileName=fn;
+	}
+	
+	public byte[] getData() {
+		return data;
+	}
+	
+	public void setData(byte[] d) {
+		data=d;
+	}
+	
+	public long getAckNumber() {
+		return ackNumber;
+	}
+	
+	public void setAckNumber(long an) {
+		ackNumber=an;
+	}
+	
+	public long getBlockNumber(){
+		return blockNumber;
+	}
+	
+	public void setBlockNumber(long bn) {
+		blockNumber=bn;
 	}
 	
 	public Map<String, InetSocketAddress> getPeerList(){
@@ -235,7 +288,26 @@ public class DirMessage {
 					
 				break;
 			}	
-			
+			case FIELDNAME_SUBHASH: {
+				m.setSubHash(value);
+				break;
+			}
+			case FIELDNAME_FILENAME: {
+				m.setFileName(value);
+				break;
+			}
+			case FIELDNAME_DATA: {
+				m.setData(Base64.getDecoder().decode(value));
+				break;
+			}
+			case FIELDNAME_BLOCK_NUMBER: {
+				m.setBlockNumber(Long.parseLong(value));
+				break;
+			}
+			case FIELDNAME_ACK_NUMBER: {
+				m.setAckNumber(Long.parseLong(value));
+				break;
+			}
 			default:
 				System.err.println("PANIC: DirMessage.fromString - message with unknown field name " + fieldName);
 				System.err.println("Message was:\n" + message);
@@ -294,6 +366,28 @@ public class DirMessage {
 					sb.append(FIELDNAME_PEER + DELIMITER + peer + "," + peerList.get(peer).getHostString() + "," + peerList.get(peer).getPort() + END_LINE);
 				}
 				
+				break;
+			}
+			case DirMessageOps.OPERATION_DIRDL_REQ: {
+				sb.append(FIELDNAME_SUBHASH + DELIMITER + subHash + END_LINE);
+				break;
+			}
+			case DirMessageOps.OPERATION_DIRDL_REPLY: {
+				sb.append(FIELDNAME_BLOCK_NUMBER + DELIMITER + blockNumber + END_LINE);
+				sb.append(FIELDNAME_DATA + DELIMITER + Base64.getEncoder().encodeToString(data) + END_LINE);
+				break;
+			}
+			case DirMessageOps.OPERATION_DIRDL_OK: {
+				sb.append(FIELDNAME_FILENAME + DELIMITER + fileName + END_LINE);
+				sb.append(FIELDNAME_SUBHASH + DELIMITER + subHash + END_LINE);
+				break;
+			}
+			case DirMessageOps.OPERATION_DIRDL_ACK: {
+				sb.append(FIELDNAME_ACK_NUMBER + DELIMITER + ackNumber + END_LINE);
+				break;
+			}
+			default: {
+				System.err.println("Invalid operation");
 				break;
 			}
 			

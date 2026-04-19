@@ -8,9 +8,6 @@ import es.um.redes.nanoFiles.util.FileInfo;
 
 public class PeerMessage {
 
-
-
-
 	private byte opcode;
 
 	/*

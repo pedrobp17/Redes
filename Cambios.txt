@@ -25,3 +25,8 @@ tienes que volver a cambiar (segundo parámetro de la función de la línea 75 d
 --> HAY QUE HACER LO DE MANDAR POR CHUNKS EN PEERDL Y DONDE HAGA FALTA
 
 --> Nos faltaria hacer el dirdl básico para optar al 10
+
+--> Hecho el dirdl avanzado, ya optamos a un 11
+
+--> Faltaria hacer lo de los chunks con peerdl, ¿que tamaño de paquete ponemos? ¿y de chunk? ¿igual al de DirMessage? preguntar al profesor. Una vez decidido es casi análogo
+a lo hecho en dirdl, aunque aqui no habria que gestionar ACKs, ya que TCP es un protocolo confiable

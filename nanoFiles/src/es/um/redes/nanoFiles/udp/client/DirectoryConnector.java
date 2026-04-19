@@ -1,5 +1,6 @@
 package es.um.redes.nanoFiles.udp.client;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -408,8 +409,30 @@ public class DirectoryConnector {
 		String filename = null;
 		long filesize = -1;
 		String filehash = null;
+		ByteArrayOutputStream baos=new ByteArrayOutputStream();
 
-
+		DirMessage messageToPeer=new DirMessage(DirMessageOps.OPERATION_DIRDL_REQ);
+		messageToPeer.setSubHash(hashSubstring);
+		byte[] messageFromPeerBytes=sendAndReceiveDatagrams(messageToPeer.toString().getBytes());
+		DirMessage messageFromPeer=DirMessage.fromString(new String(messageFromPeerBytes));
+		
+		while(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_REPLY)) {
+			
+			baos.write(messageFromPeer.getData(), 0, messageFromPeer.getData().length);
+			
+			messageToPeer=new DirMessage(DirMessageOps.OPERATION_DIRDL_ACK);
+			messageToPeer.setAckNumber(messageFromPeer.getBlockNumber());
+			messageFromPeerBytes=sendAndReceiveDatagrams(messageToPeer.toString().getBytes());
+			messageFromPeer=DirMessage.fromString(new String(messageFromPeerBytes));
+		}
+		
+		if(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_OK)) {
+			fileData=baos.toByteArray();
+			filesize=fileData.length;
+			filename=messageFromPeer.getFileName();
+			filehash=messageFromPeer.getSubHash();			
+		}
+		
 
 		return new DownloadedFile(filename, filesize, fileData, filehash);
 	}
