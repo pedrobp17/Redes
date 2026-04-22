@@ -171,7 +171,7 @@ public class NFControllerLogicP2P {
 		else {
 			InetSocketAddress serverAddress=dirLogic.fetchPeerList().get(targetPeerNickname);
 	
-			if(serverAddress.equals(null)) {
+			if(serverAddress==null) {
 				System.out.println("Enter a valid nickname");
 				success=false;
 			}

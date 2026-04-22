@@ -94,7 +94,7 @@ public class NFConnector {
 		}
 		
 		
-		return null;
+		return response;
 		
 	}
 
