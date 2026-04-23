@@ -141,7 +141,7 @@ public class PeerMessageTest{
 		f.close();
 
 		// Envío de un mensaje con los datos del fichero a descargar
-		PeerMessage fileDataMsg = new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_DATA, fichero.fileName, data);
+		PeerMessage fileDataMsg = new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_DATA, data);
 		fileDataMsg.writeMessageToOutputStream(fos);
 
 		

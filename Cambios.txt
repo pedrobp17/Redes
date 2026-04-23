@@ -35,3 +35,5 @@ a lo hecho en dirdl, aunque aqui no habria que gestionar ACKs, ya que TCP es un 
 --> creo que esta todo pero me resulta raro porque solo ha sido poner dos cosas, pruebalo y me dices porque como los boletines son como son.
 --> lo que pusiste del Thread y su inicializacion en NFServer creo que esta bien o al menos yo lo he usado como tu lo dejaste
 
+--> TODOS los comandos funcionan sobre el papel, faltarian minucias como probar casos limites, ya que puede ser que el programa trate mal los fallos o que no los notifique 
+correctamente y ya pues hacer la memoria.

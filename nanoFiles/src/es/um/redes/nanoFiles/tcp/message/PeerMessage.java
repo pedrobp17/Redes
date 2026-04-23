@@ -8,6 +8,8 @@ import es.um.redes.nanoFiles.util.FileInfo;
 
 public class PeerMessage {
 
+	public static final int MAX_CHUNK_SIZE=10;
+	
 	private byte opcode;
 
 	/*
@@ -20,8 +22,9 @@ public class PeerMessage {
 	
 	private String subHash;
 	private long offset;
-	private int length;
-	private String fileName; //para devolver el nombre del archivo junto a data
+	private long length;
+	private long fileSize;
+	private String fileName; 
 	private byte[] data;
 
 	public PeerMessage() {
@@ -39,13 +42,20 @@ public class PeerMessage {
 	}
 	
 	public PeerMessage(byte op, String hash) {
-		assert(op == PeerMessageOps.OPCODE_PEER_FILE_DL_REQ || op == PeerMessageOps.OPCODE_PEER_FILE_DL_REPLY);
+		assert(op == PeerMessageOps.OPCODE_PEER_FILE_DL_REQ);
 		this.opcode = op;
 		this.subHash = hash;
 	}
 
+	public PeerMessage(byte op, String hash, long fs, String fn) {
+		assert(op == PeerMessageOps.OPCODE_PEER_FILE_DL_REPLY);
+		this.opcode = op;
+		this.subHash = hash;
+		this.fileName = fn;
+		this.fileSize = fs;
+	}
 	
-	public PeerMessage(byte opcode, String fullHash, int offset, int length) {
+	public PeerMessage(byte opcode, String fullHash, long offset, long length) {
 		assert(opcode == PeerMessageOps.OPCODE_PEER_FILE_DL_FILE);
 		this.opcode = opcode;
 		this.offset = offset;
@@ -53,10 +63,9 @@ public class PeerMessage {
 		this.subHash = fullHash;
 	}
 
-	public PeerMessage(byte opcode, String fileName, byte[] data) {
+	public PeerMessage(byte opcode, byte[] data) {
 		assert(opcode == PeerMessageOps.OPCODE_PEER_FILE_DL_DATA);
 		this.opcode = opcode;
-		this.fileName=fileName;
 		this.data = data;
 	}
 	
@@ -94,11 +103,11 @@ public class PeerMessage {
 		offset=o;
 	}
 	
-	public int getLength() {
+	public long getLength() {
 		return length;
 	}
 
-	public void setLength(int l) {
+	public void setLength(long l) {
 		length=l;
 	}
 	
@@ -108,6 +117,14 @@ public class PeerMessage {
 	
 	public void setFileName(String n) {
 		fileName=n;
+	}
+	
+	public long getFileSize() {
+		return fileSize;
+	}
+	
+	public void setFileSize(long fs) {
+		fileSize = fs;
 	}
 	
 	public byte[] getData() {
@@ -150,16 +167,23 @@ public class PeerMessage {
 				break;
 			}
 			case PeerMessageOps.OPCODE_PEER_FILE_DL_REQ: {
-				int tam=dis.readInt();
-				byte[] bSubHash=new byte[tam];
+				
+				int tamHash=dis.readInt();
+				byte[] bSubHash=new byte[tamHash];
 				dis.readFully(bSubHash);
 				message.setSubHash(new String(bSubHash));
 				break;
 			}
 			case PeerMessageOps.OPCODE_PEER_FILE_DL_REPLY: {
-				int tam=dis.readInt();
-				byte[] bHash=new byte[tam];
+				long fs=dis.readLong();
+				int tamName=dis.readInt();
+				byte[] bFileName=new byte[tamName];
+				dis.readFully(bFileName);
+				int tamHash=dis.readInt();
+				byte[] bHash=new byte[tamHash];
 				dis.readFully(bHash);
+				message.setFileName(new String(bFileName));
+				message.setFileSize(fs);
 				message.setSubHash(new String(bHash));
 				break;
 			}
@@ -169,16 +193,11 @@ public class PeerMessage {
 				dis.readFully(bHashFile);
 				message.setSubHash(new String(bHashFile));
 				message.setOffset(dis.readLong());
-				message.setLength(dis.readInt());
+				message.setLength(dis.readLong());
 				break;
 			}
 			case PeerMessageOps.OPCODE_PEER_FILE_DL_DATA: {
 				int tam=dis.readInt();
-				byte[] bName=new byte[tam];
-				dis.readFully(bName);
-				message.setFileName(new String(bName));
-				
-				tam=dis.readInt();
 				byte[] bData=new byte[tam];
 				dis.readFully(bData);
 				message.setData(bData);
@@ -226,6 +245,11 @@ public class PeerMessage {
 			}
 			case PeerMessageOps.OPCODE_PEER_FILE_DL_REPLY: {
 				byte[] bHash=getSubHash().getBytes();
+				byte[] bFileName=getFileName().getBytes();
+				long fs=getFileSize();
+				dos.writeLong(fs);
+				dos.writeInt(bFileName.length);
+				dos.write(bFileName);
 				dos.writeInt(bHash.length);
 				dos.write(bHash);
 				break;
@@ -235,13 +259,10 @@ public class PeerMessage {
 				dos.writeInt(bHashFile.length);
 				dos.write(bHashFile);
 				dos.writeLong(getOffset());
-				dos.writeInt(getLength());
+				dos.writeLong(getLength());
 				break;
 			}
-			case PeerMessageOps.OPCODE_PEER_FILE_DL_DATA: { //TODO poner esto en la memoria
-				byte[] bName=getFileName().getBytes();
-				dos.writeInt(bName.length);
-				dos.write(bName);
+			case PeerMessageOps.OPCODE_PEER_FILE_DL_DATA: { 
 				byte[] bData=getData();
 				dos.writeInt(bData.length);
 				dos.write(bData);

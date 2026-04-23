@@ -111,33 +111,50 @@ public class NFConnector {
 			
 			if(messageFromServer.getOpcode()==PeerMessageOps.OPCODE_PEER_FILE_DL_REPLY) {
 				String completeHash=messageFromServer.getSubHash();
-				messageToServer=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_FILE, completeHash, 0, Integer.MAX_VALUE); //TODO cambiar esto si hacemos lo de lpos chunks
-				messageToServer.writeMessageToOutputStream(dos);
-				messageFromServer=PeerMessage.readMessageFromInputStream(dis);
+				String fileName=messageFromServer.getFileName();
+				long fileSize=messageFromServer.getFileSize();
+						
+				long offset=0;
 				
-				if(messageFromServer.getOpcode()==PeerMessageOps.OPCODE_PEER_FILE_DL_DATA) {
-					byte[] receivedData=messageFromServer.getData();
-					File outputFile = FileNameUtil.chooseAvailableName(messageFromServer.getFileName()).toFile();
-					FileOutputStream fos = new FileOutputStream(outputFile, true); //el true es vital para los chunks, para que no sobreescriba
-					try { 
-					    fos.write(receivedData);
-					    System.out.println("Download succeded");
-					    success=true;
-					} 
-					catch (IOException e) {
-					    System.err.println("Disk writing error: " + e.getMessage());
-					    e.printStackTrace();
-					}
-					finally {
-						fos.close();
+				File outputFile = FileNameUtil.chooseAvailableName(fileName).toFile();
+				FileOutputStream fos = new FileOutputStream(outputFile, true); //el true es vital para los chunks, para que no sobreescriba
+				
+				try {
+					while(offset<fileSize) {
+					
+						long cantidad = Math.min(PeerMessage.MAX_CHUNK_SIZE, fileSize - offset);
+						
+						messageToServer=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_FILE, completeHash, offset, cantidad);
+						messageToServer.writeMessageToOutputStream(dos);
+						messageFromServer=PeerMessage.readMessageFromInputStream(dis);
+						
+						if(messageFromServer.getOpcode()==PeerMessageOps.OPCODE_PEER_FILE_DL_DATA) {
+							byte[] receivedData=messageFromServer.getData();
+							 
+						    fos.write(receivedData);
+						    offset+=receivedData.length;
+						    System.out.println("Chunk written successfully");
+							 
+						}
+						else {
+							System.out.println("Download failed");
+							success=false;
+							break;
+						}
 					}
 					
 					
+					System.out.println("Download succeded");
+				    success=true;	
+					
+				} catch(IOException e) {
+					System.out.println("Disk writing error: "+ e.getMessage());
+					e.printStackTrace();
+				}finally {
+					fos.close();
 				}
-				else {
-					System.out.println("Download failed");
-					success=false;
-				}
+				
+				
 				
 			}
 			else {

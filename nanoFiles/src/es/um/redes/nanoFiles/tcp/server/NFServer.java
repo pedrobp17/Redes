@@ -233,7 +233,9 @@ public class NFServer implements Runnable {
 						FileInfo[] matchingFiles=FileInfo.lookupHashSubstring(peerFiles, subHash);
 						
 						if(matchingFiles.length==1) {
-							PeerMessage messageToClient=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_REPLY, matchingFiles[0].fileHash);
+							PeerMessage messageToClient=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_REPLY, matchingFiles[0].fileHash,
+									matchingFiles[0].fileSize, matchingFiles[0].fileName);
+							
 							messageToClient.writeMessageToOutputStream(dos);
 						}
 						else {
@@ -254,7 +256,7 @@ public class NFServer implements Runnable {
 						
 						String hash=messageFromClient.getSubHash();
 						long offset=messageFromClient.getOffset();
-						int length=messageFromClient.getLength();
+						long length=messageFromClient.getLength();
 						
 						FileInfo[] peerFiles=NanoFiles.db.getFiles();
 						FileInfo[] matchingFiles=FileInfo.lookupHashSubstring(peerFiles, hash);
@@ -262,8 +264,9 @@ public class NFServer implements Runnable {
 						if(matchingFiles.length==1) {
 							
 							FileInfo fichero=matchingFiles[0];
+
 							int cantidad= (int) Math.min(length, fichero.fileSize - offset);
-							System.out.println("Cantidad a leer: "+cantidad);
+							System.out.println("Cantidad a leer en el bloque : "+cantidad);
 							
 							RandomAccessFile f=new RandomAccessFile(fichero.filePath, "r");
 							byte[] data=new byte[cantidad];
@@ -272,8 +275,9 @@ public class NFServer implements Runnable {
 							f.readFully(data);
 							f.close();
 							
-							PeerMessage messageToClient=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_DATA, fichero.fileName, data);
+							PeerMessage messageToClient=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_DATA, data);
 							messageToClient.writeMessageToOutputStream(dos);
+							
 							
 						}
 						else {
