@@ -7,6 +7,7 @@ import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.Date;
 
 import es.um.redes.nanoFiles.application.NanoFiles;
@@ -129,8 +130,8 @@ public class NFServer implements Runnable {
 					Socket socket = serverSocket.accept();
 					System.out.println("\nNew client connected: " +
 						socket.getInetAddress().toString() + ":" + socket.getPort());	
-					
-					serveFilesToClient(socket);
+					NFServerThread st = new NFServerThread(socket);
+					st.start();
 			}
 		}
 		catch(IOException e) {
@@ -146,7 +147,8 @@ public class NFServer implements Runnable {
 		 * hilo es el que se encarga de atender al cliente conectado, no podremos tener
 		 * más de un cliente conectado a este servidor.
 		 */
-
+		
+		
 
 
 
@@ -157,16 +159,18 @@ public class NFServer implements Runnable {
 	 * servidor (stopserver) 3) Obtener el puerto de escucha del servidor etc.
 	 */
 
-	public void startServer() {
-		
+	public boolean startServer() {
+		boolean started = false;
 		if(serverThread==null || !serverThread.isAlive()) {
 			serverThread=new Thread(this); //de nuevo, no se si esto es del todo correcto
 			serverThread.start();
 			System.out.println("Server started running");
+			started = true;
 		}
 		else {
 			System.out.println("Server is already running");
 		}
+		return started;
 		
 	}
 	

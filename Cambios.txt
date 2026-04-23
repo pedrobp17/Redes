@@ -30,3 +30,8 @@ tienes que volver a cambiar (segundo parámetro de la función de la línea 75 d
 
 --> Faltaria hacer lo de los chunks con peerdl, ¿que tamaño de paquete ponemos? ¿y de chunk? ¿igual al de DirMessage? preguntar al profesor. Una vez decidido es casi análogo
 a lo hecho en dirdl, aunque aqui no habria que gestionar ACKs, ya que TCP es un protocolo confiable
+23/abr Boletin 8: TCP concurrente
+--> mirar si cuando pongo a null fileServe en stopFileServe y en los casos de error de startFileServe de NFControllerLogicP2P esta bien
+--> creo que esta todo pero me resulta raro porque solo ha sido poner dos cosas, pruebalo y me dices porque como los boletines son como son.
+--> lo que pusiste del Thread y su inicializacion en NFServer creo que esta bien o al menos yo lo he usado como tu lo dejaste
+

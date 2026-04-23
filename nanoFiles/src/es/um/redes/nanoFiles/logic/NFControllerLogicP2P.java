@@ -51,9 +51,19 @@ public class NFControllerLogicP2P {
 			 * programa
 			 * 
 			 */
-
-
-
+			try{
+				fileServer = new NFServer();
+				if ( fileServer.getServerPort() > 0) {
+					serverRunning = fileServer.startServer();
+					System.out.println("File server is running in port: " + fileServer.getServerPort());	
+				}else {
+					System.err.println("File server is running in a error port");
+					fileServer = null;//TODO: mirar si esto es correcto
+				}
+			}catch(IOException e) {
+				System.err.println("File server can not be started: " + e.getMessage());
+				fileServer = null;//TODO: mirar si esto es correcto
+			}
 
 		}
 		return serverRunning;
@@ -238,9 +248,9 @@ public class NFControllerLogicP2P {
 		/*
 		 * TODO: Devolver el puerto de escucha de nuestro servidor de ficheros
 		 */
-
-
-
+		if( fileServer != null ) {
+			port = fileServer.getServerPort();		
+		}
 		return port;
 	}
 
@@ -252,18 +262,15 @@ public class NFControllerLogicP2P {
 		/*
 		 * TODO: Enviar señal para detener nuestro servidor de ficheros en segundo plano
 		 */
-
-
+		if( fileServer != null) {
+			fileServer.stopServer();
+			fileServer = null; //TODO: mirar si esto es correcto
+		}
 
 	}
 
 	protected boolean serving() {
-		boolean result = false;
-
-
-
-		return result;
-
+		return fileServer != null && fileServer.isActive();
 	}
 
 }
