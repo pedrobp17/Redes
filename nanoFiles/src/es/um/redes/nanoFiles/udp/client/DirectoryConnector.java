@@ -336,19 +336,46 @@ public class DirectoryConnector {
 		ArrayList<FileInfo> filelist = new ArrayList<>();
 		// TODO: Ver TODOs en pingDirectory y seguir esquema similar
 		boolean isLast = false;
-		while( !isLast ) {
+		
+		int attempts=0;
+		try {
 			DirMessage request=new DirMessage(DirMessageOps.OPERATION_DIRFILES);
-			byte[] requestString=request.toString().getBytes();
-			byte[] responseString=sendAndReceiveDatagrams(requestString);
-			DirMessage response=DirMessage.fromString(new String(responseString));
-				
-			if(response.getOperation().equals(DirMessageOps.OPERATION_DIRFILES_OK)) {
-				filelist.addAll(response.getFileList());
-				isLast = response.getLast();
-			}else {
-				isLast = true;
-			}
-		}
+			byte[] requestString = request.toString().getBytes();
+			DatagramPacket requestPacket=new DatagramPacket(requestString, requestString.length, directoryAddress);
+			socket.send(requestPacket);
+			socket.setSoTimeout(TIMEOUT);
+			
+			while(!isLast && attempts < MAX_NUMBER_OF_ATTEMPTS) {
+				try {
+					byte[] responseData= new byte[DirMessage.PACKET_MAX_SIZE];
+					DatagramPacket responsePacket=new DatagramPacket(responseData, responseData.length);
+					socket.receive(responsePacket);
+					
+					DirMessage response=DirMessage.fromString(
+							new String (responsePacket.getData(), 0, responsePacket.getLength()));
+							if (response.getOperation().equals(DirMessageOps.OPERATION_DIRFILES_OK)) {
+								filelist.addAll(response.getFileList());
+								isLast = response.getLast();
+								attempts = 0;
+							} else {
+								System.err.println("Unexpected response while getting directory files: "
+										+ response.getOperation());
+								break;
+							}
+						} catch (SocketTimeoutException e) {
+							attempts++;
+							if (attempts >= MAX_NUMBER_OF_ATTEMPTS) {
+								System.err.println("Timeout while receiving directory file list.");
+							}
+						}
+					}
+				} catch (IOException e) {
+					System.err.println("Check your connection, cannot comunicate with directory");
+				}
+		
+			
+		
+		
 		return filelist.toArray(new FileInfo[0]);
 	}
 
@@ -361,8 +388,10 @@ public class DirectoryConnector {
 		DirMessage response=DirMessage.fromString(new String(responseString));
 		
 		if(response.getOperation().equals(DirMessageOps.OPERATION_PEERS_OK)) {
-			System.out.println("Peers succesful");
 			peers=response.getPeerList();
+		}
+		else {
+			return null;
 		}
 		return peers;
 	}

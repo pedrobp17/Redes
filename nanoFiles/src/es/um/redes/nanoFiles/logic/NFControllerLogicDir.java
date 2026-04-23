@@ -100,13 +100,20 @@ public class NFControllerLogicDir {
 	 */
 	protected void getAndPrintPeerList() {
 		Map<String, InetSocketAddress> peers = directoryConnector.getPeerList();
-		System.out.println("* Registered peers at " + directoryConnector.getDirectoryHostname());
-		if (peers.isEmpty()) {
-			System.out.println("  (none)");
-			return;
+		if(peers!=null) {
+			System.out.println("Peers successful");
+			System.out.println("* Registered peers at " + directoryConnector.getDirectoryHostname());
+			if (peers.isEmpty()) {
+				System.out.println("  (none)");
+				return;
+			}
+			for (Map.Entry<String, InetSocketAddress> entry : peers.entrySet()) {
+				System.out.println("  - " + entry.getKey() + " @ " + entry.getValue());
+			}
+			
 		}
-		for (Map.Entry<String, InetSocketAddress> entry : peers.entrySet()) {
-			System.out.println("  - " + entry.getKey() + " @ " + entry.getValue());
+		else {
+			System.out.println("Peers failed");
 		}
 	}
 

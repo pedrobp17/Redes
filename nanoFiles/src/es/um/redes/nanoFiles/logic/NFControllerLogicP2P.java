@@ -135,7 +135,9 @@ public class NFControllerLogicP2P {
 			FileInfo[] list=connector.getPeerFilesList();
 			
 			if(list!=null) {
-				System.out.println(list);
+				
+				FileInfo.printToSysout(list);
+				
 				success=true;
 			}
 			else {

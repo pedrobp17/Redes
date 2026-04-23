@@ -187,9 +187,12 @@ public class PeerMessage {
 			}
 
 		default:
-			System.err.println("PeerMessage.readMessageFromInputStream doesn't know how to parse this message opcode: "
-					+ PeerMessageOps.opcodeToOperation(opcode));
-			System.exit(-1);
+			
+			if(opcode==PeerMessageOps.OPCODE_INVALID_CODE) {
+				System.err.println("PeerMessage.readMessageFromInputStream doesn't know how to parse this message opcode: "
+						+ PeerMessageOps.opcodeToOperation(opcode));
+				System.exit(-1);
+			}
 		}
 		return message;
 	}

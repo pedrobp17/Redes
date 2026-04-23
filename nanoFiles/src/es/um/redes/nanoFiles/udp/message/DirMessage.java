@@ -387,7 +387,10 @@ public class DirMessage {
 				break;
 			}
 			default: {
-				System.err.println("Invalid operation");
+				
+				if(operation.equals(DirMessageOps.OPERATION_INVALID)) {
+					System.err.println("Invalid operation");
+				}
 				break;
 			}
 			

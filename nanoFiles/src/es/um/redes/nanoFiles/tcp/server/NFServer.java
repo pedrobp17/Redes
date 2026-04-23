@@ -281,7 +281,7 @@ public class NFServer implements Runnable {
 							messageToClient.writeMessageToOutputStream(dos);
 						}
 						
-						
+						break;
 						
 					}
 					default: {

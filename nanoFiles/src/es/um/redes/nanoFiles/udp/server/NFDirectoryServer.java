@@ -59,6 +59,15 @@ public class NFDirectoryServer {
 		DatagramPacket responsePacket=new DatagramPacket(responseData, responseData.length, addr);
 		socket.send(responsePacket);
 	}
+	
+	private DatagramPacket enviarRecibirPaquete( DirMessage m, InetSocketAddress addr) throws IOException{
+		String responseString = m.toString();
+		byte[] responseData=responseString.getBytes();
+		DatagramPacket responsePacket=new DatagramPacket(responseData, responseData.length, addr);
+		socket.send(responsePacket);
+		DatagramPacket ack_pkt=receiveDatagram();
+		return ack_pkt;
+	}
 
 	public NFDirectoryServer(double corruptionProbability, String directoryFilesPath) throws SocketException {
 		/*
@@ -112,7 +121,7 @@ public class NFDirectoryServer {
 			byte[] recvBuf = new byte[DirMessage.PACKET_MAX_SIZE];
 			datagramReceivedFromClient=new DatagramPacket(recvBuf, recvBuf.length);
 			
-			socket.setSoTimeout(2000);
+			//socket.setSoTimeout(2000); TODO esto que?
 			
 			socket.receive(datagramReceivedFromClient);
 
@@ -392,11 +401,12 @@ public class NFDirectoryServer {
 							response.setBlockNumber(i);
 							response.setData(dataToRead);
 							
-							enviarPaquete(response, (InetSocketAddress)pkt.getSocketAddress());
-							ack_pkt=receiveDatagram();
+							ack_pkt=enviarRecibirPaquete(response, (InetSocketAddress)pkt.getSocketAddress());
 							request=DirMessage.fromString(new String(ack_pkt.getData(), 0, ack_pkt.getLength()));
 							
-							currentAck=request.getAckNumber();
+							if(request.getOperation().equals(DirMessageOps.OPERATION_DIRDL_ACK)) {
+								currentAck=request.getAckNumber();
+							}
 						}
 						catch(IOException e) { //esto tambien tiene en cuenta los timeout
 							response=new DirMessage(DirMessageOps.OPERATION_DIRDL_ERROR);
@@ -412,7 +422,7 @@ public class NFDirectoryServer {
 				
 				response=new DirMessage(DirMessageOps.OPERATION_DIRDL_OK);
 				response.setFileName(filaName);
-				response.setSubHash(subHash);
+				response.setSubHash(fileHash);
 				System.out.println("File sent successfully");
 				
 			}
@@ -423,6 +433,8 @@ public class NFDirectoryServer {
 				}
 				response=new DirMessage(DirMessageOps.OPERATION_DIRDL_ERROR);
 			}
+			
+			break;
 			
 		}
 		default:
