@@ -21,8 +21,6 @@ import es.um.redes.nanoFiles.util.NickGenerator;
 
 public class NFDirectoryServer {
 	
-	private static final int MAX_CHUNK_SIZE=40000; //para cubrir fácil la base 64 y cabeceras
-	
 	/**
 	 * Número de puerto UDP en el que escucha el directorio
 	 */
@@ -447,7 +445,8 @@ public class NFDirectoryServer {
 		 * (msgToSend) con el mensaje de respuesta a enviar, extraer los bytes en que se
 		 * codifica el string y finalmente enviarlos en un datagrama
 		 */
-		if(!operation.equals(DirMessageOps.OPERATION_DIRFILES_OK)) {
+		if(!operation.equals(DirMessageOps.OPERATION_DIRFILES_OK)
+				&& !operation.equals(DirMessageOps.OPERATION_DIRFILES)) {
 			String responseString=response.toString();
 			byte[] responseData=responseString.getBytes();
 			InetSocketAddress clientAddr = (InetSocketAddress) pkt.getSocketAddress();
