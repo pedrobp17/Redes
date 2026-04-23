@@ -14,6 +14,7 @@ import es.um.redes.nanoFiles.application.NanoFiles;
 import es.um.redes.nanoFiles.tcp.message.PeerMessage;
 import es.um.redes.nanoFiles.tcp.message.PeerMessageOps;
 import es.um.redes.nanoFiles.util.FileInfo;
+import es.um.redes.nanoFiles.util.FileNameUtil;
 
 //Esta clase proporciona la funcionalidad necesaria para intercambiar mensajes entre el cliente y el servidor
 public class NFConnector {
@@ -116,11 +117,7 @@ public class NFConnector {
 				
 				if(messageFromServer.getOpcode()==PeerMessageOps.OPCODE_PEER_FILE_DL_DATA) {
 					byte[] receivedData=messageFromServer.getData();
-					String localDirectory=NanoFiles.sharedDirname;
-					String fileName = messageFromServer.getFileName();
-					
-					File dir = new File(localDirectory);
-					File outputFile = new File(dir, fileName);
+					File outputFile = FileNameUtil.chooseAvailableName(messageFromServer.getFileName()).toFile();
 					FileOutputStream fos = new FileOutputStream(outputFile, true); //el true es vital para los chunks, para que no sobreescriba
 					try { 
 					    fos.write(receivedData);
