@@ -7,6 +7,7 @@ import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.Date;
 
@@ -25,6 +26,7 @@ public class NFServer implements Runnable {
 
 	private Thread serverThread; //no se si es del todo correcto, preguntar al profesor
 	private ServerSocket serverSocket = null;
+	private volatile boolean stopping=false; //para controlar si cerramos el socket nosotros o se cierra por accidente
 
 	public NFServer() throws IOException {
 		/*
@@ -134,6 +136,14 @@ public class NFServer implements Runnable {
 					st.start();
 			}
 		}
+		catch(SocketException e) {
+			if(stopping) {
+				System.out.println("Server socket has been closed");
+			}
+			else {
+				System.out.println("Server exception: "+e.getMessage());
+			}
+		}
 		catch(IOException e) {
 			System.out.println("Server exception: "+ e.getMessage());
 			e.printStackTrace();
@@ -178,6 +188,7 @@ public class NFServer implements Runnable {
 		
 		try {
             if (serverSocket != null && !serverSocket.isClosed()) {
+            	stopping=true;
                 serverSocket.close();
                 System.out.println("Server stopped");
             }
@@ -238,15 +249,15 @@ public class NFServer implements Runnable {
 							
 							messageToClient.writeMessageToOutputStream(dos);
 						}
-						else {
-							
-							System.out.println("Several files match the subhash: ");
-
-							for(FileInfo f : matchingFiles) {
-								System.out.println(f.fileName + " con hash: "+f.fileHash);
-							}
-							
+						else if(matchingFiles.length>0){
 							PeerMessage messageToClient=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_ERROR);
+							messageToClient.setErrorInfo("Several files match the subhash");
+							messageToClient.writeMessageToOutputStream(dos);
+						}
+						else {
+
+							PeerMessage messageToClient=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_ERROR);
+							messageToClient.setErrorInfo("No file matches the subhash");
 							messageToClient.writeMessageToOutputStream(dos);
 						}
 						
@@ -280,8 +291,15 @@ public class NFServer implements Runnable {
 							
 							
 						}
-						else {
+						else if(matchingFiles.length>0){
 							PeerMessage messageToClient=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_ERROR);
+							messageToClient.setErrorInfo("Several files match the subhash");
+							messageToClient.writeMessageToOutputStream(dos);
+						}
+						else {
+
+							PeerMessage messageToClient=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_ERROR);
+							messageToClient.setErrorInfo("No file matches the subhash");
 							messageToClient.writeMessageToOutputStream(dos);
 						}
 						

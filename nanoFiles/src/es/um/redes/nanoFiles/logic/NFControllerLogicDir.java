@@ -161,7 +161,9 @@ public class NFControllerLogicDir {
 	}
 
 
-
+	private boolean isDLNull(DirectoryConnector.DownloadedFile dl) {
+		return dl==null || dl.filename==null || dl.filehash==null || dl.filesize==-1 || dl.data==null;
+	}
 
 
 	/**
@@ -170,7 +172,7 @@ public class NFControllerLogicDir {
 	 */
 	protected boolean downloadAndSaveFromDirectory(String hashSubstring) {
 		DirectoryConnector.DownloadedFile dl = directoryConnector.downloadFileFromDirectory(hashSubstring);
-		if (dl == null) {
+		if (isDLNull(dl)) {
 			System.err.println("* Failed to download file given by hash substring " + hashSubstring);
 			return false;
 		}

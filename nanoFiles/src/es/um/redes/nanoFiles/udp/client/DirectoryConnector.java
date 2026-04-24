@@ -455,6 +455,16 @@ public class DirectoryConnector {
 			messageFromPeer=DirMessage.fromString(new String(messageFromPeerBytes));
 		}
 		
+		if(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_ERROR)) {
+		
+			String error=messageFromPeer.getErrorInfo();
+			
+			if(!error.isBlank()) {
+				System.out.println(error);
+			}
+			
+		}
+		
 		if(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_OK)) {
 			fileData=baos.toByteArray();
 			filesize=fileData.length;
@@ -475,8 +485,15 @@ public class DirectoryConnector {
 	public boolean unregisterFileServer() {
 		boolean success = false;
 
-
-
+		DirMessage messageToDirectory=new DirMessage(DirMessageOps.OPERATION_QUIT);
+		messageToDirectory.setNickname(NanoFiles.peerNickname);
+		byte[] messageFromDirectoryBytes=sendAndReceiveDatagrams(messageToDirectory.toString().getBytes());
+		DirMessage messageFromDirectory=DirMessage.fromString(new String(messageFromDirectoryBytes));
+		
+		if(messageFromDirectory.getOperation().equals(DirMessageOps.OPERATION_QUIT_OK)) {
+			System.out.println("Server successfully unregistered from directory");
+			success=true;
+		}
 
 		return success;
 	}

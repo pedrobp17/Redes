@@ -137,6 +137,15 @@ public class NFConnector {
 							 
 						}
 						else {
+							
+							if(messageFromServer.getOpcode()==PeerMessageOps.OPCODE_PEER_FILE_DL_ERROR) {
+								String error=messageFromServer.getErrorInfo();
+								
+								if(!error.isBlank()) {
+									System.out.println(error);
+								}
+							}
+							
 							System.out.println("Download failed");
 							success=false;
 							break;
@@ -158,6 +167,15 @@ public class NFConnector {
 				
 			}
 			else {
+				
+				if(messageFromServer.getOpcode()==PeerMessageOps.OPCODE_PEER_FILE_DL_ERROR) {
+					String error=messageFromServer.getErrorInfo();
+					
+					if(!error.isBlank()) {
+						System.out.println(error);
+					}
+				}
+				
 				System.out.println("Download failed");
 				success=false;
 			}

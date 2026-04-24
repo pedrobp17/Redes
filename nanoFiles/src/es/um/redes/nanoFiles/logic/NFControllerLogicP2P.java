@@ -4,8 +4,10 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.io.IOException;
 import es.um.redes.nanoFiles.tcp.client.NFConnector;
 import es.um.redes.nanoFiles.application.NanoFiles;
@@ -171,7 +173,7 @@ public class NFControllerLogicP2P {
 				return false;
 			}
 			
-			List<InetSocketAddress> aux= new ArrayList<>();
+			Set<InetSocketAddress> aux= new LinkedHashSet<>();
 			
 			for(InetSocketAddress[] peersForThisHash : matchingFilesAndPeers.values()) {
 				aux.addAll(Arrays.asList(peersForThisHash));
@@ -266,7 +268,6 @@ public class NFControllerLogicP2P {
 		 */
 		if( fileServer != null) {
 			fileServer.stopServer();
-			fileServer = null; //TODO: mirar si esto es correcto
 		}
 
 	}

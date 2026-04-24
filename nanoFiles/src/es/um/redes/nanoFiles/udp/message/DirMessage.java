@@ -41,6 +41,8 @@ public class DirMessage {
 	private static final String FIELDNAME_DATA="data";
 	private static final String FIELDNAME_BLOCK_NUMBER="block_number";
 	private static final String FIELDNAME_ACK_NUMBER="ack_number";
+	private static final String FIELDNAME_ERROR_INFO="error_info";
+	private static final String FIELDNAME_NICKNAME="nickname";
 	
 	/*
 	 * TODO: (Boletín MensajesASCII) Definir de manera simbólica los nombres de
@@ -76,6 +78,9 @@ public class DirMessage {
 	private byte[] data;
 	private long blockNumber;
 	private long ackNumber;
+	
+	private String errorInfo;
+	private String nickname;
 	
 	public DirMessage(String op) {
 		operation = op;
@@ -193,6 +198,25 @@ public class DirMessage {
 		blockNumber=bn;
 	}
 	
+	public String getErrorInfo() {
+		return errorInfo;
+	}
+	
+	public void setErrorInfo(String ei) {
+		
+		if(ei.contains("\n")) throw new IllegalArgumentException("The information string must not contain returns");
+		
+		errorInfo = ei;
+	}
+	
+	public String getNickname() {
+		return nickname;
+	}
+	
+	public void setNickname(String nn) {
+		nickname=nn;
+	}
+	
 	public Map<String, InetSocketAddress> getPeerList(){
 		return Collections.unmodifiableMap(peerList);
 	}
@@ -308,6 +332,14 @@ public class DirMessage {
 				m.setAckNumber(Long.parseLong(value));
 				break;
 			}
+			case FIELDNAME_ERROR_INFO: {
+				m.setErrorInfo(value);
+				break;
+			}
+			case FIELDNAME_NICKNAME: {
+				m.setNickname(value);
+				break;
+			}
 			default:
 				System.err.println("PANIC: DirMessage.fromString - message with unknown field name " + fieldName);
 				System.err.println("Message was:\n" + message);
@@ -384,6 +416,14 @@ public class DirMessage {
 			}
 			case DirMessageOps.OPERATION_DIRDL_ACK: {
 				sb.append(FIELDNAME_ACK_NUMBER + DELIMITER + ackNumber + END_LINE);
+				break;
+			}
+			case DirMessageOps.OPERATION_DIRDL_ERROR: {
+				sb.append(FIELDNAME_ERROR_INFO + DELIMITER + errorInfo + END_LINE);
+				break;
+			}
+			case DirMessageOps.OPERATION_QUIT: {
+				sb.append(FIELDNAME_NICKNAME + DELIMITER + nickname + END_LINE);
 				break;
 			}
 			default: {

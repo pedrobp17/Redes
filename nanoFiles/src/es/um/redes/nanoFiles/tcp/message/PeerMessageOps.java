@@ -28,7 +28,7 @@ public class PeerMessageOps {
 	 * mensajes definidos anteriormente, añadirlos al array "valid_opcodes" y añadir
 	 * su representación textual a "valid_operations_str" EN EL MISMO ORDEN.
 	 */
-	private static final Byte[] _valid_opcodes = { OPCODE_INVALID_CODE,
+	protected static final Byte[] _valid_opcodes = { OPCODE_INVALID_CODE,
 			OPCODE_PEER_FILES_REQ,
 			OPCODE_PEER_FILES_REPLY,
 			OPCODE_PEER_FILES_ERROR,

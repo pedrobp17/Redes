@@ -24,6 +24,8 @@ public class DirMessageOps {
 	public static final String OPERATION_DIRDL_ERROR="dirdl_error";
 	public static final String OPERATION_DIRDL_OK="dirdl_ok";
 	public static final String OPERATION_QUIT="quit";
+	public static final String OPERATION_QUIT_OK="quit_ok";
+	public static final String OPERATION_QUIT_ERROR="quit_error";
 	
 	// TODO: definir las operaciones del protocolo de directorio
 

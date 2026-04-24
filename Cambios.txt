@@ -37,3 +37,5 @@ a lo hecho en dirdl, aunque aqui no habria que gestionar ACKs, ya que TCP es un 
 
 --> TODOS los comandos funcionan sobre el papel, faltarian minucias como probar casos limites, ya que puede ser que el programa trate mal los fallos o que no los notifique 
 correctamente y ya pues hacer la memoria.
+
+--> Gestión de errores probada y arreglada, el programa reacciona correctamente, quit arreglado faltaba un método por implementar

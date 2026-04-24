@@ -3,6 +3,7 @@ package es.um.redes.nanoFiles.tcp.message;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 import es.um.redes.nanoFiles.util.FileInfo;
 
@@ -26,6 +27,8 @@ public class PeerMessage {
 	private long fileSize;
 	private String fileName; 
 	private byte[] data;
+	
+	private String errorInfo;
 
 	public PeerMessage() {
 		opcode = PeerMessageOps.OPCODE_INVALID_CODE;
@@ -135,6 +138,14 @@ public class PeerMessage {
 		data=d.clone();
 	}
 	
+	public String getErrorInfo() {
+		return errorInfo;
+	}
+	
+	public void setErrorInfo(String ei) { //aqui no hace falta exigir que no haya saltos de linea
+		errorInfo=ei;
+	}
+	
 	/**
 	 * Método de clase para parsear los campos de un mensaje y construir el objeto
 	 * DirMessage que contiene los datos del mensaje recibido
@@ -204,10 +215,17 @@ public class PeerMessage {
 				
 				break;
 			}
+			case PeerMessageOps.OPCODE_PEER_FILE_DL_ERROR: {
+				int tam=dis.readInt();
+				byte[] bError=new byte[tam];
+				dis.readFully(bError);
+				message.setErrorInfo(new String(bError));
+				break;
+			}
 
 		default:
 			
-			if(opcode==PeerMessageOps.OPCODE_INVALID_CODE) {
+			if(!Arrays.asList(PeerMessageOps._valid_opcodes).contains(opcode)) {
 				System.err.println("PeerMessage.readMessageFromInputStream doesn't know how to parse this message opcode: "
 						+ PeerMessageOps.opcodeToOperation(opcode));
 				System.exit(-1);
@@ -268,12 +286,19 @@ public class PeerMessage {
 				dos.write(bData);
 				break;
 			}
-			
+			case PeerMessageOps.OPCODE_PEER_FILE_DL_ERROR: {
+				byte[] bError=getErrorInfo().getBytes();
+				dos.writeInt(bError.length);
+				dos.write(bError);
+				break;
+			}
 
 
 		default:
-			System.err.println("PeerMessage.writeMessageToOutputStream found unexpected message opcode " + opcode + "("
-					+ PeerMessageOps.opcodeToOperation(opcode) + ")");
+			if(!Arrays.asList(PeerMessageOps._valid_opcodes).contains(opcode)) {
+				System.err.println("PeerMessage.writeMessageToOutputStream found unexpected message opcode " + opcode + "("
+						+ PeerMessageOps.opcodeToOperation(opcode) + ")");
+			}
 		}
 	}
 

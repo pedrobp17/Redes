@@ -408,6 +408,7 @@ public class NFDirectoryServer {
 						}
 						catch(IOException e) { //esto tambien tiene en cuenta los timeout
 							response=new DirMessage(DirMessageOps.OPERATION_DIRDL_ERROR);
+							response.setErrorInfo("");
 							System.err.println(e.getMessage());
 						}
 					}
@@ -424,16 +425,31 @@ public class NFDirectoryServer {
 				System.out.println("File sent successfully");
 				
 			}
-			else {
-				System.out.println("Serveral files contain the same subhash");
-				for(FileInfo f: matchingFiles) {
-					System.out.println(f.filePath + " with hash: " + f.fileHash);
-				}
+			else if(matchingFiles.length!=0){
 				response=new DirMessage(DirMessageOps.OPERATION_DIRDL_ERROR);
+				response.setErrorInfo("Serveral files contain the same subhash");
+			}
+			else {
+				response=new DirMessage(DirMessageOps.OPERATION_DIRDL_ERROR);
+				response.setErrorInfo("No file matches the subhash");
 			}
 			
 			break;
 			
+		}
+		case DirMessageOps.OPERATION_QUIT: {
+			
+			String nickname=request.getNickname();
+			if(registeredPeers.remove(nickname) !=null) {
+				System.out.println("Quit successful");
+				response=new DirMessage(DirMessageOps.OPERATION_QUIT_OK);
+			}
+			else {
+				System.out.println("Quit failed");
+				response=new DirMessage(DirMessageOps.OPERATION_QUIT_ERROR);
+			}
+			
+			break;
 		}
 		default:
 			System.err.println("Unexpected message operation: \"" + operation + "\"");
