@@ -42,6 +42,19 @@ correctamente y ya pues hacer la memoria.
 
 --> Esta bien lo de cambiar el metodo de control de descarga de NFControllerLogicDir, y lo de capturar EOFException en NFServer?
 
+----PEDRO------
 --> Esta bien que en DirectoryConector se haga uso de tcp y no implementar eso en NFServer o algun lado de esos? 
 
 -->Mirar searchFileByHash de DirectoryConector
+
+--> La recepcion de serve en DirectoryConector esta mal gestionada, porque si se manda un primer mensaje de un peer que puede registrarse se guarda en el mapa que tiene el directorio pero si ese mensaje de confirmacion se pierde se produce un timeout. Al producirse ese timeout se vuelve a mandar el mismo mensaje, por lo que provocaria una colision por estar ya registrado y mandaria un error cuando deberia ser un ok. Pa eso es mejor que el else del case cuando mensaje es serve sea un serve_ok
+
+--> En NFController hay que mirar tmb el caso de cuando el registerFileServe falla porque entonces tendriamos el caso de que el peer esta sirviendo pero sin estar registrado
+
+--> Serve_error creo q nunca debe darse
+
+--> implementar logica de acks en dirfiles
+
+--> mirar si quitar el quit_error pq nunca se podria dar
+
+--> mirar de cambiar lo que pasa cuando timeout = 5 pq ahora devuelve null y rompe el programa y ns si seria mejor que directamente diera por perdido el intento de ejecutar el comando 
