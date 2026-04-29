@@ -41,3 +41,7 @@ correctamente y ya pues hacer la memoria.
 --> Gestión de errores probada y arreglada, el programa reacciona correctamente, quit arreglado faltaba un método por implementar
 
 --> Esta bien lo de cambiar el metodo de control de descarga de NFControllerLogicDir, y lo de capturar EOFException en NFServer?
+
+--> Esta bien que en DirectoryConector se haga uso de tcp y no implementar eso en NFServer o algun lado de esos? 
+
+-->Mirar searchFileByHash de DirectoryConector
