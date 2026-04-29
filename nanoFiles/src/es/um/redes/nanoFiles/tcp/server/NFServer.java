@@ -2,6 +2,7 @@ package es.um.redes.nanoFiles.tcp.server;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
@@ -225,6 +226,7 @@ public class NFServer implements Runnable {
 			
 			while(socket.isConnected()) {
 				PeerMessage messageFromClient= PeerMessage.readMessageFromInputStream(dis);
+			
 				byte op=messageFromClient.getOpcode();
 				
 				switch(op) {
@@ -315,6 +317,9 @@ public class NFServer implements Runnable {
 					
 				}
 			}
+		}
+		catch(EOFException e) { //esto lo lanza el cliente cuando cierra la conexión.
+			System.out.println("Client disconnected");
 		}
 		catch(IOException e) {
 			System.out.println("Server exception: "+e.getMessage());

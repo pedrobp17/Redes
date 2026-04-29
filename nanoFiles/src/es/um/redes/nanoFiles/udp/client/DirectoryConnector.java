@@ -1,6 +1,9 @@
 package es.um.redes.nanoFiles.udp.client;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -20,6 +23,7 @@ import es.um.redes.nanoFiles.application.NanoFiles;
 import es.um.redes.nanoFiles.udp.message.DirMessage;
 import es.um.redes.nanoFiles.udp.message.DirMessageOps;
 import es.um.redes.nanoFiles.util.FileInfo;
+import es.um.redes.nanoFiles.util.FileNameUtil;
 
 /**
  * Cliente con métodos de consulta y actualización específicos del directorio
@@ -62,10 +66,10 @@ public class DirectoryConnector {
 	public static class DownloadedFile {
 		public final String filename;
 		public final long filesize;
-		public final byte[] data;
+		public final File data;
 		public final String filehash;
 
-		public DownloadedFile(String filename, long fsize, byte[] data, String filehash) {
+		public DownloadedFile(String filename, long fsize, File data, String filehash) {
 			this.filename = filename;
 			this.filesize = fsize;
 			this.data = data;
@@ -434,44 +438,68 @@ public class DirectoryConnector {
 	}
 
 	public DownloadedFile downloadFileFromDirectory(String hashSubstring) {
-		byte[] fileData = null;
+		File fileData = null;
 		String filename = null;
 		long filesize = -1;
 		String filehash = null;
 		ByteArrayOutputStream baos=new ByteArrayOutputStream();
+		File temp=FileNameUtil.chooseAvailableName("dirdl.tmp").toFile();
+		
+		
+		FileOutputStream fos;
+		try {
+			fos = new FileOutputStream(temp, true);
+		} catch (FileNotFoundException e) {
+			System.out.println(e.getMessage());
+			return new DownloadedFile(filename, filesize, fileData, filehash); 
+		}
 
 		DirMessage messageToPeer=new DirMessage(DirMessageOps.OPERATION_DIRDL_REQ);
 		messageToPeer.setSubHash(hashSubstring);
 		byte[] messageFromPeerBytes=sendAndReceiveDatagrams(messageToPeer.toString().getBytes());
 		DirMessage messageFromPeer=DirMessage.fromString(new String(messageFromPeerBytes));
 		
-		while(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_REPLY)) {
-			
-			baos.write(messageFromPeer.getData(), 0, messageFromPeer.getData().length);
-			
-			messageToPeer=new DirMessage(DirMessageOps.OPERATION_DIRDL_ACK);
-			messageToPeer.setAckNumber(messageFromPeer.getBlockNumber());
-			messageFromPeerBytes=sendAndReceiveDatagrams(messageToPeer.toString().getBytes());
-			messageFromPeer=DirMessage.fromString(new String(messageFromPeerBytes));
-		}
-		
-		if(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_ERROR)) {
-		
-			String error=messageFromPeer.getErrorInfo();
-			
-			if(!error.isBlank()) {
-				System.out.println(error);
+		try {
+			while(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_REPLY)) {
+				
+				fos.write(messageFromPeer.getData(), 0, messageFromPeer.getData().length);
+				
+				messageToPeer=new DirMessage(DirMessageOps.OPERATION_DIRDL_ACK);
+				messageToPeer.setAckNumber(messageFromPeer.getBlockNumber());
+				messageFromPeerBytes=sendAndReceiveDatagrams(messageToPeer.toString().getBytes());
+				messageFromPeer=DirMessage.fromString(new String(messageFromPeerBytes));
 			}
 			
+			if(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_ERROR)) {
+			
+				String error=messageFromPeer.getErrorInfo();
+				
+				if(!error.isBlank()) {
+					System.out.println(error);
+				}
+				
+			}
+			
+			if(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_OK)) {
+				fileData=temp;
+				filesize=messageFromPeer.getFileSize();
+				filename=messageFromPeer.getFileName();
+				filehash=messageFromPeer.getSubHash();			
+			}
 		}
-		
-		if(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_OK)) {
-			fileData=baos.toByteArray();
-			filesize=fileData.length;
-			filename=messageFromPeer.getFileName();
-			filehash=messageFromPeer.getSubHash();			
+		catch(IOException e) {
+			System.out.println(e.getMessage());
+			fileData = null;
+			filename = null;
+			filesize = -1;
+			filehash = null;
+		} finally {
+			try {
+				fos.close();
+			} catch (IOException e) {
+				System.out.println(e.getMessage());
+			}
 		}
-		
 
 		return new DownloadedFile(filename, filesize, fileData, filehash);
 	}

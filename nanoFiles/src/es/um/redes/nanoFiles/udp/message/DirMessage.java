@@ -21,7 +21,7 @@ import es.um.redes.nanoFiles.util.FileInfo;
  */
 public class DirMessage {
 	public static final int PACKET_MAX_SIZE = 65507; // 65535 - 8 (UDP header) - 20 (IP header)
-	public static final int CHUNK_MAX_SIZE=40000;
+	public static final int CHUNK_MAX_SIZE=10;
 	
 	private static final char DELIMITER = ':'; // Define el delimitador
 	private static final char END_LINE = '\n'; // Define el carácter de fin de línea
@@ -38,6 +38,7 @@ public class DirMessage {
 	private static final String FIELDNAME_PEER="peer";
 	private static final String FIELDNAME_SUBHASH="subhash";
 	private static final String FIELDNAME_FILENAME="file_name";
+	private static final String FIELDNAME_FILESIZE="file_size";
 	private static final String FIELDNAME_DATA="data";
 	private static final String FIELDNAME_BLOCK_NUMBER="block_number";
 	private static final String FIELDNAME_ACK_NUMBER="ack_number";
@@ -75,6 +76,7 @@ public class DirMessage {
 	
 	private String subHash;
 	private String fileName;
+	private long fileSize;
 	private byte[] data;
 	private long blockNumber;
 	private long ackNumber;
@@ -217,6 +219,14 @@ public class DirMessage {
 		nickname=nn;
 	}
 	
+	public long getFileSize() {
+		return fileSize;
+	}
+	
+	public void setFileSize(long fs) {
+		fileSize=fs;
+	}
+	
 	public Map<String, InetSocketAddress> getPeerList(){
 		return Collections.unmodifiableMap(peerList);
 	}
@@ -340,6 +350,10 @@ public class DirMessage {
 				m.setNickname(value);
 				break;
 			}
+			case FIELDNAME_FILESIZE: {
+				m.setFileSize(Long.parseLong(value));
+				break;
+			}
 			default:
 				System.err.println("PANIC: DirMessage.fromString - message with unknown field name " + fieldName);
 				System.err.println("Message was:\n" + message);
@@ -410,6 +424,7 @@ public class DirMessage {
 				break;
 			}
 			case DirMessageOps.OPERATION_DIRDL_OK: {
+				sb.append(FIELDNAME_FILESIZE + DELIMITER + fileSize + END_LINE);
 				sb.append(FIELDNAME_FILENAME + DELIMITER + fileName + END_LINE);
 				sb.append(FIELDNAME_SUBHASH + DELIMITER + subHash + END_LINE);
 				break;

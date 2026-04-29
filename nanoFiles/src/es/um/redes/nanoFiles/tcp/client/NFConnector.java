@@ -47,6 +47,17 @@ public class NFConnector {
 
 	}
 
+	public void close() {
+		try {
+			socket.close();
+			dos.close();
+			dis.close();
+		}
+		catch(IOException e) {
+			System.out.println("Connector closed unsuccessfully");
+		}
+	}
+	
 	public void test() {
 		/*
 		 * TODO: (Boletín SocketsTCP) Enviar entero cualquiera a través del socket y
@@ -99,7 +110,7 @@ public class NFConnector {
 		
 	}
 
-	public boolean downloadSubHash(String subHash) {
+	public boolean downloadSubHash(String subHash) { //esto no sirve al final
 		
 		boolean success=false;
 		
@@ -187,8 +198,78 @@ public class NFConnector {
 		return success;
 	}
 
+	//se pide como precondicion que el chunk sea valido
 	
+	public boolean downloadSingleChunk(String hash, long offset, long length, RandomAccessFile raf) {
+		
+		boolean success=false;
+		
+		try {
+			PeerMessage messageToServer=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_FILE, hash, offset, length);
+			messageToServer.writeMessageToOutputStream(dos);
+			PeerMessage messageFromServer=PeerMessage.readMessageFromInputStream(dis);
+			
+			if(messageFromServer.getOpcode()==PeerMessageOps.OPCODE_PEER_FILE_DL_DATA) {
+				byte[] receivedData=messageFromServer.getData();
+				raf.seek(offset);
+				raf.write(receivedData);
+				System.out.println("Chunk successfully downloaded");
+				success=true;
+			}
+			else if(messageFromServer.getOpcode()==PeerMessageOps.OPCODE_PEER_FILE_DL_ERROR) {
+				String error=messageFromServer.getErrorInfo();
+				
+				if(!error.isBlank()) {
+					System.out.println(error);
+				}
+				
+			}
+		}
+		catch (IOException e) {
+			System.out.println(e.getMessage());
+			success=false;
+		}
+		
+		if(!success) System.out.println("Chunk failed to download");
+		
+		return success;
+		
+	}
 
+	public FileInfo getFileInfo(String subHash) {
+		
+		FileInfo info=new FileInfo();
+		
+		PeerMessage messageToServer=new PeerMessage(PeerMessageOps.OPCODE_PEER_FILE_DL_REQ, subHash);
+		
+		try {
+			messageToServer.writeMessageToOutputStream(dos);
+			PeerMessage messageFromServer=PeerMessage.readMessageFromInputStream(dis);
+			
+			if(messageFromServer.getOpcode()==PeerMessageOps.OPCODE_PEER_FILE_DL_REPLY) {
+				info.fileHash=messageFromServer.getSubHash();
+				info.fileName=messageFromServer.getFileName();
+				info.fileSize=messageFromServer.getFileSize();
+			}
+			else if(messageFromServer.getOpcode()==PeerMessageOps.OPCODE_PEER_FILE_DL_ERROR) {
+				String error=messageFromServer.getErrorInfo();
+				
+				if(!error.isBlank()) {
+					System.out.println(error);
+				}
+				
+				return null;
+			}
+		}
+		catch(IOException e) {
+			System.out.println(e.getMessage());
+			return null;
+		}
+		
+		return info;
+		
+	}
+	
 	public InetSocketAddress getServerAddr() {
 		return serverAddr;
 	}

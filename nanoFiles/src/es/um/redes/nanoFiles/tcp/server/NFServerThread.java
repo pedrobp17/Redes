@@ -16,6 +16,7 @@ public class NFServerThread extends Thread {
 		this.socket = socket;
 	}
 	public void run() {
+		
 		NFServer.serveFilesToClient(socket);
 		try {
 			if( !socket.isClosed()) {

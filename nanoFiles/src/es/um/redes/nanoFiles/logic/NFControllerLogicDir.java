@@ -176,27 +176,24 @@ public class NFControllerLogicDir {
 			System.err.println("* Failed to download file given by hash substring " + hashSubstring);
 			return false;
 		}
-		try {
-			java.nio.file.Path dest = es.um.redes.nanoFiles.util.FileNameUtil.chooseAvailableName(dl.filename);
-			java.nio.file.Files.write(dest, dl.data);
-			String checksum = es.um.redes.nanoFiles.util.FileDigest.computeFileChecksumString(dest.toString());
-			System.out.println("* Downloaded directory file to " + toDisplayPath(dest) + " (" + dl.data.length
-					+ " bytes)");
-			if (dl.filehash != null) {
-				if (dl.filehash.equals(checksum)) {
-					System.out.println("* Checksum verified: computed value matches expected hash (" + checksum + ")");
-				} else {
-					System.err.println("* WARNING: computed checksum (" + checksum + ") does not match expected hash ("
-							+ dl.filehash + ")");
-				}
+		
+		java.nio.file.Path dest = es.um.redes.nanoFiles.util.FileNameUtil.chooseAvailableName(dl.filename);
+		dl.data.renameTo(dest.toFile()); //simplemente cambiamos el nombre al archivo temporal
+		String checksum = es.um.redes.nanoFiles.util.FileDigest.computeFileChecksumString(dest.toString());
+		System.out.println("* Downloaded directory file to " + toDisplayPath(dest) + " (" + dl.filesize
+				+ " bytes)");
+		if (dl.filehash != null) {
+			if (dl.filehash.equals(checksum)) {
+				System.out.println("* Checksum verified: computed value matches expected hash (" + checksum + ")");
 			} else {
-				System.out.println("* Computed SHA-256: " + checksum);
+				System.err.println("* WARNING: computed checksum (" + checksum + ") does not match expected hash ("
+						+ dl.filehash + ")");
 			}
-			return true;
-		} catch (java.io.IOException e) {
-			System.err.println("* Failed to write downloaded file: " + e.getMessage());
-			return false;
+		} else {
+			System.out.println("* Computed SHA-256: " + checksum);
 		}
+		return true;
+		
 	}
 
 	/**

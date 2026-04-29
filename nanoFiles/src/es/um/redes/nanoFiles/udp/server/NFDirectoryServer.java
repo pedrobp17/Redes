@@ -420,6 +420,7 @@ public class NFDirectoryServer {
 				f.close();
 				
 				response=new DirMessage(DirMessageOps.OPERATION_DIRDL_OK);
+				response.setFileSize(fileSize);
 				response.setFileName(filaName);
 				response.setSubHash(fileHash);
 				System.out.println("File sent successfully");

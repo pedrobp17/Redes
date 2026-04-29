@@ -8,14 +8,20 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+
 import es.um.redes.nanoFiles.tcp.client.NFConnector;
+import es.um.redes.nanoFiles.tcp.message.PeerMessage;
 import es.um.redes.nanoFiles.application.NanoFiles;
 
 
 
 import es.um.redes.nanoFiles.tcp.server.NFServer;
+import es.um.redes.nanoFiles.util.FileDigest;
 import es.um.redes.nanoFiles.util.FileInfo;
+import es.um.redes.nanoFiles.util.FileNameUtil;
 
 public class NFControllerLogicP2P {
 	// Servidor TCP local para compartir ficheros con otros peers
@@ -216,23 +222,85 @@ public class NFControllerLogicP2P {
 		// pedido, obtener nombre remoto, reservar nombre local sin colisiones, alternar
 		// descarga de chunks y verificar hash final. Cerrar los sockets al terminar.
 
-		NFConnector connector;
+		List<NFConnector> connectors=new ArrayList<>();
+		RandomAccessFile raf=null;
 		
-		for(InetSocketAddress serverAddress : serverAddressList) {
+		
 			
+		try {
+			
+			for(InetSocketAddress serverAddress : serverAddressList) {
+				NFConnector c=new NFConnector(serverAddress);
+				connectors.add(c);
+			}
+			
+			FileInfo info=connectors.get(0).getFileInfo(targetHashSubstring);
+			if(info==null) return false;
+			
+			File file=FileNameUtil.chooseAvailableName(info.fileName).toFile();
+			raf=new RandomAccessFile(file, "rw");
+			long offset=0;
+			int peerIndex=0;
+			
+			while(offset<info.fileSize) {
+				long cantidad=Math.min(PeerMessage.MAX_CHUNK_SIZE, info.fileSize - offset);
+				NFConnector currentPeer=connectors.get(peerIndex % connectors.size());
+				
+				boolean chunkDownloaded=currentPeer.downloadSingleChunk(info.fileHash, offset, cantidad, raf);
+				
+				if(chunkDownloaded) {
+					offset+=cantidad;
+					peerIndex++;
+				}
+				else { //si el peer falla lo eliminamos de la lista, puede parecer que no pero creo que en archivos grandes se puede notar
+					
+					currentPeer.close();
+					
+					connectors.remove(currentPeer);
+					
+					if(connectors.isEmpty()) {
+						System.out.println("All the peers failed");
+						return false;
+					}
+					
+				}
+				
+				
+			}
+			
+			String downloadedHash=FileDigest.computeFileChecksumString(file.getAbsolutePath());
+			if(downloadedHash.equals(info.fileHash)) {
+				System.out.println("Download completed and verified!");
+				downloaded=true;
+			}
+			else {
+				System.out.println("Hash mismatch, download failed");
+				downloaded=false;
+			}
+			
+		}
+		catch(IOException e) {
+			System.err.println(e.getMessage());
+		}
+		finally {
 			try {
-				connector=new NFConnector(serverAddress);
-				downloaded=connector.downloadSubHash(targetHashSubstring);
+				if(raf!=null) raf.close();
 			}
 			catch(IOException e) {
-				System.err.println(e.getMessage());
+				System.out.println(e.getMessage());
+			}
+			
+			for(NFConnector c : connectors) {
+				c.close();
 			}
 		}
-
-
+		
 		return downloaded;
 	}
 
+	
+		
+		
 	private String toDisplayPath(java.nio.file.Path path) {
 		java.nio.file.Path abs = path.toAbsolutePath().normalize();
 		java.nio.file.Path cwd = java.nio.file.Paths.get("").toAbsolutePath().normalize();
