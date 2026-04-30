@@ -1,0 +1,13 @@
+List obtained successfully
+Name                                Size Hash                                         
+pruebaDL.txt                          99 d3f172d97f6e755e8e30d3d0ac6138ec2472cd86     
+pruebaPeer.txt                        20 a8286f090124f3c9c5401c2114c104acd7520e79     
+(pedro@nf-shared) peerdl dani a8286
+Chunk successfully downloaded
+Chunk successfully downloaded
+Download completed and verified!
+(pedro@nf-shared) peerdl dani a8286
+Chunk successfully downloaded
+Chunk successfully downloaded
+Download completed and verified!
+(pedro@nf-shared) 
