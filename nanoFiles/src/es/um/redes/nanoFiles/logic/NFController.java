@@ -227,53 +227,63 @@ public class NFController {
 		}
 		case NFCommands.COM_PING: {
 			if( currentState != OFFLINE) {
+				System.out.println("The command: ping is not available.");
 				commandAllowed = false;
 			}
 			break;
 		}
 		case NFCommands.COM_NICK: {
 			if ( currentState != PING) {
+				System.out.println("The command: nick is not available.");
 				commandAllowed = false;
 			}
+			break;
 		}
 		case NFCommands.COM_SERVE: {
 			if ( currentState != PING) {
+				System.out.println("The command: serve is not available.");
 				commandAllowed = false;
 			}
 			break;
 		}
 		case NFCommands.COM_FILELIST_DIR: {
 			if ( currentState != SERVE) {
+				System.out.println("The command: dirfiles is not available.");
 				commandAllowed = false;
 			}
 			break;
 		}
 		case NFCommands.COM_DOWNLOAD_DIR: {
 			if ( currentState != SERVE) {
+				System.out.println("The command: dirdl is not available.");
 				commandAllowed = false;
 			}
 			break;
 		}
 		case NFCommands.COM_PEERLIST: {
 			if ( currentState != SERVE) {
+				System.out.println("The command: peers is not available.");
 				commandAllowed = false;
 			}
 			break;
 		}
 		case NFCommands.COM_QUIT: {
 			if( currentState != SERVE) {
+				System.out.println("The command: quit is not available.");
 				commandAllowed = false;
 			}
 			break;
 		}
 		case NFCommands.COM_DOWNLOAD_PEER: {
 			if( currentState != SERVE) {
+				System.out.println("The command: peerdl is not available.");
 				commandAllowed = false;
 			}
 			break;
 		}
 		case NFCommands.COM_FILELIST_PEER: {
 			if( currentState != SERVE) {
+				System.out.println("The command: peerfiles is not available.");
 				commandAllowed = false;
 			}
 			break;

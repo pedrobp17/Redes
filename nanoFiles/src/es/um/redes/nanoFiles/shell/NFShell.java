@@ -79,7 +79,7 @@ public class NFShell {
 		String[] args = new String[0];
 		Vector<String> vargs = new Vector<String>();
 		while (true) {
-			System.out.print("(nanoFiles@" + NanoFiles.sharedDirname + ") ");
+			System.out.print("(" + NanoFiles.peerNickname + "@" + NanoFiles.sharedDirname + ") ");
 			// obtenemos la línea tecleada por el usuario
 			String input = reader.nextLine();
 			StringTokenizer st = new StringTokenizer(input);
