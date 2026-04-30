@@ -11,3 +11,16 @@ Chunk successfully downloaded
 Chunk successfully downloaded
 Download completed and verified!
 (pedro@nf-shared) 
+--------------------------------------------------------------
+New client connected: /155.54.223.152:43344
+
+New client connected: /127.0.0.1:48018
+Cantidad a leer en el bloque : 10
+Cantidad a leer en el bloque : 10
+Chunk successfully downloaded
+Cantidad a leer en el bloque : 10
+Cantidad a leer en el bloque : 10
+Client disconnected
+Chunk successfully downloaded
+Download completed and verified!
+(dani@nf-shared) Client disconnected
