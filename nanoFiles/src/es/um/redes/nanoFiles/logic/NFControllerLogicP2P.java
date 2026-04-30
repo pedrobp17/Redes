@@ -118,7 +118,7 @@ public class NFControllerLogicP2P {
 		 */
 
 		try {
-			NFConnector nfConnector = new NFConnector(new InetSocketAddress(NFServer.PORT));
+			NFConnector nfConnector = new NFConnector(new InetSocketAddress(fileServer.getServerPort()));
 			nfConnector.test();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

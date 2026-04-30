@@ -22,7 +22,7 @@ import es.um.redes.nanoFiles.util.FileDatabase;
 
 public class NFServer implements Runnable {
 
-	public static final int PORT = 10000;
+	
 
 
 	private Thread serverThread; //no se si es del todo correcto, preguntar al profesor
@@ -35,7 +35,7 @@ public class NFServer implements Runnable {
 		 * especificado (PORT)
 		 */
 		
-		InetSocketAddress address=new InetSocketAddress(PORT);
+		InetSocketAddress address=new InetSocketAddress(0);
 		
 		/*
 		 * TODO: (Boletín SocketsTCP) Crear un socket servidor y ligarlo a la dirección
@@ -45,7 +45,7 @@ public class NFServer implements Runnable {
 		serverSocket=new ServerSocket();
 		serverSocket.bind(address);
 		
-		System.out.println("Server is listening on port: "+PORT);
+		System.out.println("Server is listening on port: "+serverSocket.getLocalPort());
 
 
 	}
@@ -200,7 +200,7 @@ public class NFServer implements Runnable {
 	}
 
 	public int getServerPort(){
-		return PORT;
+		return serverSocket.getLocalPort();
 	}
 
 	public boolean isActive() {
