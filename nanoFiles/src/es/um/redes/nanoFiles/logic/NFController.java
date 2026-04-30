@@ -163,6 +163,9 @@ public class NFController {
 				boolean serverRunning = controllerPeer.startFileServer();
 				if (serverRunning) {
 					commandSucceeded = controllerDir.registerFileServer(controllerPeer.getServerPort());
+					
+					if(!commandSucceeded) controllerPeer.stopFileServer();
+					
 				} else {
 					System.err.println("Cannot start file server");
 				}

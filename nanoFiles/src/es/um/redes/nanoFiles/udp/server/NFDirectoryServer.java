@@ -346,7 +346,7 @@ public class NFDirectoryServer {
 				response.setServerNickname(requestNickname); //pasamos el nickname final con el que se ha registrado el server
 			}
 			else {
-				response=new DirMessage(DirMessageOps.OPERATION_SERVE_ERROR);
+				response=new DirMessage(DirMessageOps.OPERATION_SERVE_OK);
 			}
 			
 			break;

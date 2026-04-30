@@ -15,7 +15,6 @@ public class DirMessageOps {
 	public static final String OPERATION_DIRFILES_OK="dirfiles_ok";
 	public static final String OPERATION_SERVE="serve";
 	public static final String OPERATION_SERVE_OK="serve_ok";
-	public static final String OPERATION_SERVE_ERROR="serve_error";
 	public static final String OPERATION_PEERS="peers";
 	public static final String OPERATION_PEERS_OK="peers_ok";
 	public static final String OPERATION_DIRDL_REQ="dirdl_req";

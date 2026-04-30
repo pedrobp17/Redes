@@ -319,7 +319,7 @@ public class NFServer implements Runnable {
 			}
 		}
 		catch(EOFException e) { //esto lo lanza el cliente cuando cierra la conexión.
-			System.out.println("Client disconnected");
+			
 		}
 		catch(IOException e) {
 			System.out.println("Server exception: "+e.getMessage());

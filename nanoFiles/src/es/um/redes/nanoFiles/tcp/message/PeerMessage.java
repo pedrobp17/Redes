@@ -9,7 +9,7 @@ import es.um.redes.nanoFiles.util.FileInfo;
 
 public class PeerMessage {
 
-	public static final int MAX_CHUNK_SIZE=40000;
+	public static final int MAX_CHUNK_SIZE=10;
 	
 	private byte opcode;
 
