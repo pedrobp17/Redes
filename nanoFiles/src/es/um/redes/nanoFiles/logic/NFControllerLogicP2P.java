@@ -336,6 +336,7 @@ public class NFControllerLogicP2P {
 		 */
 		if( fileServer != null) {
 			fileServer.stopServer();
+			fileServer = null;
 		}
 
 	}

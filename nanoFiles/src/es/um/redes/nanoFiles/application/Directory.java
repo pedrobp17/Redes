@@ -7,7 +7,7 @@ import java.net.SocketException;
 import es.um.redes.nanoFiles.udp.server.NFDirectoryServer;
 
 public class Directory {
-	public static final double DEFAULT_CORRUPTION_PROBABILITY = 0.0;
+	public static final double DEFAULT_CORRUPTION_PROBABILITY = 0.8;
 	public static final String DEFAULT_DIRECTORY_FILES_PATH = "dir-shared";
 
 	public static void main(String[] args) {

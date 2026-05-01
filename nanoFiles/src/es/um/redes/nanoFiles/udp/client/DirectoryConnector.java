@@ -38,7 +38,7 @@ public class DirectoryConnector {
 	 * socket antes de que se deba lanzar una excepción SocketTimeoutException para
 	 * recuperar el control
 	 */
-	private static final int TIMEOUT = 1000;
+	private static final int TIMEOUT = 2000;
 	/**
 	 * Número de intentos máximos para obtener del directorio una respuesta a una
 	 * solicitud enviada. Cada vez que expira el timeout sin recibir respuesta se
@@ -273,24 +273,24 @@ public class DirectoryConnector {
 		request.setProtocolID(NanoFiles.PROTOCOL_ID);
 		byte[] requestString=request.toString().getBytes();
 		byte[] responseString=sendAndReceiveDatagrams(requestString);
-		DirMessage response=DirMessage.fromString(new String(responseString));
+		if(responseString != null) {
+			DirMessage response=DirMessage.fromString(new String(responseString));
 		
-		String operation = response.getOperation();
+			String operation = response.getOperation();
 		
-		switch (operation) {
-			case DirMessageOps.OPERATION_PING_OK : {
-				System.out.println("DirectoryConnector.pingDirectory: operation successful");
-				success=true;
-				break;
+			switch (operation) {
+				case DirMessageOps.OPERATION_PING_OK : {
+					System.out.println("DirectoryConnector.pingDirectory: operation successful");
+					success=true;
+					break;
+				}
+				case DirMessageOps.OPERATION_PING_ERROR : {
+					System.out.println("DirectoryConnector.pingDirectory: operation failed");
+					success=false;
+					break;
+				}
 			}
-			case DirMessageOps.OPERATION_PING_ERROR : {
-				System.out.println("DirectoryConnector.pingDirectory: operation failed");
-				success=false;
-				break;
-			}
-		}
-
-
+		}	
 		return success;
 	}
 
@@ -311,21 +311,24 @@ public class DirectoryConnector {
 		request.setServerPort(serverPort); 
 		byte[] requestString=request.toString().getBytes();
 		byte[] responseString=sendAndReceiveDatagrams(requestString);
-		DirMessage response=DirMessage.fromString(new String(responseString));
-		
-		if(response.getOperation().equals(DirMessageOps.OPERATION_SERVE_OK)) {
-			
-			NanoFiles.peerNickname=response.getServerNickname();			
-			System.out.println("Serve succesful");			
-			
-			success=true;
-		}
-		else {
-			System.out.println("Serve failed");
-			success=false;
-		}
+		if( responseString != null) {
 
+			DirMessage response=DirMessage.fromString(new String(responseString));
+			
+			if(response.getOperation().equals(DirMessageOps.OPERATION_SERVE_OK)) {
+				
+				NanoFiles.peerNickname=response.getServerNickname();			
+				System.out.println("Serve succesful");			
+				
+				success=true;
+			}
+			else {
+				System.out.println("Serve failed");
+				success=false;
+			}
 
+	
+		}
 		return success;
 	}
 
@@ -384,18 +387,22 @@ public class DirectoryConnector {
 	}
 
 	public Map<String, InetSocketAddress> getPeerList() {
-		Map<String, InetSocketAddress> peers = new LinkedHashMap<String, InetSocketAddress>();
+		Map<String, InetSocketAddress> peers = null;
 
 		DirMessage request=new DirMessage(DirMessageOps.OPERATION_PEERS);
 		byte[] requestString=request.toString().getBytes();
 		byte[] responseString=sendAndReceiveDatagrams(requestString);
-		DirMessage response=DirMessage.fromString(new String(responseString));
-		
-		if(response.getOperation().equals(DirMessageOps.OPERATION_PEERS_OK)) {
-			peers=response.getPeerList();
-		}
-		else {
-			return null;
+		if( responseString != null) {
+
+			DirMessage response=DirMessage.fromString(new String(responseString));
+			
+			if(response.getOperation().equals(DirMessageOps.OPERATION_PEERS_OK)) {
+				peers = new LinkedHashMap<String, InetSocketAddress>();
+				peers=response.getPeerList();
+			}
+			else {
+				return peers;
+			}	
 		}
 		return peers;
 	}
@@ -445,7 +452,6 @@ public class DirectoryConnector {
 		ByteArrayOutputStream baos=new ByteArrayOutputStream();
 		File temp=FileNameUtil.chooseAvailableName("dirdl.tmp").toFile();
 		
-		
 		FileOutputStream fos;
 		try {
 			fos = new FileOutputStream(temp, true);
@@ -457,52 +463,64 @@ public class DirectoryConnector {
 		DirMessage messageToPeer=new DirMessage(DirMessageOps.OPERATION_DIRDL_REQ);
 		messageToPeer.setSubHash(hashSubstring);
 		byte[] messageFromPeerBytes=sendAndReceiveDatagrams(messageToPeer.toString().getBytes());
-		DirMessage messageFromPeer=DirMessage.fromString(new String(messageFromPeerBytes));
+		if( messageFromPeerBytes != null) {
+			System.out.println("Received reply: 0");
+			DirMessage messageFromPeer=DirMessage.fromString(new String(messageFromPeerBytes));
+			boolean imprimir = false;
 		
-		try {
-			while(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_REPLY)) {
-				
-				fos.write(messageFromPeer.getData(), 0, messageFromPeer.getData().length);
-				
-				messageToPeer=new DirMessage(DirMessageOps.OPERATION_DIRDL_ACK);
-				messageToPeer.setAckNumber(messageFromPeer.getBlockNumber());
-				messageFromPeerBytes=sendAndReceiveDatagrams(messageToPeer.toString().getBytes());
-				messageFromPeer=DirMessage.fromString(new String(messageFromPeerBytes));
-			}
-			
-			if(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_ERROR)) {
-			
-				String error=messageFromPeer.getErrorInfo();
-				
-				if(!error.isBlank()) {
-					System.out.println(error);
+			try {
+				while(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_REPLY)) {
+					if( imprimir ) {
+						System.out.println("Received reply: " + messageFromPeer.getBlockNumber());
+					}
+					
+					fos.write(messageFromPeer.getData(), 0, messageFromPeer.getData().length);
+					
+					messageToPeer=new DirMessage(DirMessageOps.OPERATION_DIRDL_ACK);
+					messageToPeer.setAckNumber(messageFromPeer.getBlockNumber());
+					System.out.println("Sending ack: " + messageFromPeer.getBlockNumber());
+					messageFromPeerBytes = sendAndReceiveDatagrams(messageToPeer.toString().getBytes());
+					if( messageFromPeerBytes != null) {
+						messageFromPeer=DirMessage.fromString(new String(messageFromPeerBytes));
+					}else{
+						return new DownloadedFile(filename, filesize, fileData, filehash);
+					}
+					imprimir = true;
 				}
 				
+				if(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_ERROR)) {
+				
+					String error=messageFromPeer.getErrorInfo();
+					
+					if(!error.isBlank()) {
+						System.out.println(error);
+					}
+					
+				}
+				
+				if(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_OK)) {
+					fileData=temp;
+					filesize=messageFromPeer.getFileSize();
+					filename=messageFromPeer.getFileName();
+					filehash=messageFromPeer.getSubHash();			
+				}
 			}
-			
-			if(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_OK)) {
-				fileData=temp;
-				filesize=messageFromPeer.getFileSize();
-				filename=messageFromPeer.getFileName();
-				filehash=messageFromPeer.getSubHash();			
-			}
-		}
-		catch(IOException e) {
-			System.out.println(e.getMessage());
-			fileData = null;
-			filename = null;
-			filesize = -1;
-			filehash = null;
-		} finally {
-			try {
-				fos.close();
-			} catch (IOException e) {
+			catch(IOException e) {
 				System.out.println(e.getMessage());
+				fileData = null;
+				filename = null;
+				filesize = -1;
+				filehash = null;
+			} finally {
+				try {
+					fos.close();
+				} catch (IOException e) {
+					System.out.println(e.getMessage());
+				}
 			}
 		}
-
 		return new DownloadedFile(filename, filesize, fileData, filehash);
-	}
+	}	
 
 	/**
 	 * Método para darse de baja como servidor de ficheros.
@@ -516,11 +534,13 @@ public class DirectoryConnector {
 		DirMessage messageToDirectory=new DirMessage(DirMessageOps.OPERATION_QUIT);
 		messageToDirectory.setNickname(NanoFiles.peerNickname);
 		byte[] messageFromDirectoryBytes=sendAndReceiveDatagrams(messageToDirectory.toString().getBytes());
-		DirMessage messageFromDirectory=DirMessage.fromString(new String(messageFromDirectoryBytes));
-		
-		if(messageFromDirectory.getOperation().equals(DirMessageOps.OPERATION_QUIT_OK)) {
-			System.out.println("Server successfully unregistered from directory");
-			success=true;
+		if(messageFromDirectoryBytes != null) {
+			DirMessage messageFromDirectory=DirMessage.fromString(new String(messageFromDirectoryBytes));
+			
+			if(messageFromDirectory.getOperation().equals(DirMessageOps.OPERATION_QUIT_OK)) {
+				System.out.println("Server successfully unregistered from directory");
+				success=true;
+			}	
 		}
 
 		return success;

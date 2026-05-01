@@ -200,7 +200,11 @@ public class NFServer implements Runnable {
 	}
 
 	public int getServerPort(){
-		return serverSocket.getLocalPort();
+		if( serverSocket != null) {
+			return serverSocket.getLocalPort();
+		}
+		System.err.println("You are trying to use a tcp port that it is null");
+		return -1;
 	}
 
 	public boolean isActive() {

@@ -53,7 +53,7 @@ public class NFController {
 	private String targetHashSubstring; // Nombre del fichero a descargar
 	private String targetPeerNickname; // Nickname para listar ficheros de un peer (peerfiles)
 	private String newNickname; // Nuevo nickname solicitado por el usuario
-
+	private boolean salir;
 	// Constructor
 	public NFController(String defaultDirectory) {
 		shell = new NFShell();
@@ -64,6 +64,8 @@ public class NFController {
 		controllerPeer = new NFControllerLogicP2P();
 		// Estado inicial del autómata
 		currentState = OFFLINE;
+		
+		salir = false;
 
 	}
 
@@ -187,8 +189,11 @@ public class NFController {
 			 * unregisterFileServer).
 			 */
 			if (controllerPeer.serving()) {
-				controllerPeer.stopFileServer();
 				commandSucceeded = controllerDir.unregisterFileServer();
+				if( commandSucceeded ) {
+					controllerPeer.stopFileServer();
+					salir = true;
+				}
 			}
 			break;
 		case NFCommands.COM_NICK:
@@ -335,7 +340,7 @@ public class NFController {
 	 * aplicación
 	 */
 	public boolean shouldQuit() {
-		return currentCommand == NFCommands.COM_QUIT;
+		return salir;
 	}
 
 	/**
