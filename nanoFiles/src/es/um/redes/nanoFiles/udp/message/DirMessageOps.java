@@ -11,7 +11,10 @@ public class DirMessageOps {
 	public static final String OPERATION_PING = "ping";
 	public static final String OPERATION_PING_OK = "ping_ok";
 	public static final String OPERATION_PING_ERROR = "ping_error";
-	public static final String OPERATION_DIRFILES="dirfiles";
+	public static final String OPERATION_DIRFILES_REQ="dirfiles_req";
+	public static final String OPERATION_DIRFILES_REP="dirfiles_rep";
+	public static final String OPERATION_DIRFILES_ACK="dirfiles_ack";
+	public static final String OPERATION_DIRFILES_ERROR="dirfiles_error";
 	public static final String OPERATION_DIRFILES_OK="dirfiles_ok";
 	public static final String OPERATION_SERVE="serve";
 	public static final String OPERATION_SERVE_OK="serve_ok";

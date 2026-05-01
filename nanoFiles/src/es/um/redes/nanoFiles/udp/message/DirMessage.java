@@ -32,7 +32,6 @@ public class DirMessage {
 	private static final String FIELDNAME_OPERATION = "operation";
 	private static final String FIELDNAME_PROTOCOL_ID="protocolid";
 	private static final String FIELDNAME_FILE="file";
-	private static final String FIELDNAME_LAST="last";
 	private static final String FIELDNAME_SERVER="server";
 	private static final String FIELDNAME_SERVER_NICKNAME="server_nickname";
 	private static final String FIELDNAME_PEER="peer";
@@ -61,7 +60,6 @@ public class DirMessage {
 	 * Identificador de protocolo usado, para comprobar compatibilidad del directorio.
 	 */
 	private String protocolId;
-	private boolean isLast = true;
 	/*
 	 * TODO: (Boletín MensajesASCII) Crear un atributo correspondiente a cada uno de
 	 * los campos de los diferentes mensajes de este protocolo.
@@ -130,14 +128,6 @@ public class DirMessage {
 	
 	public List<FileInfo> getFileList() {
 		return Collections.unmodifiableList(fileList);
-	}
-	
-	public void setLast( boolean last ) {
-		this.isLast = last;
-	}
-
-	public boolean getLast() {
-		return isLast;
 	}
 	
 	public void setServerNickname(String sn) {
@@ -285,10 +275,6 @@ public class DirMessage {
 				
 				break;
 			}
-			case FIELDNAME_LAST: {
-				m.setLast(Boolean.parseBoolean(value));
-				break;
-			}
 			case FIELDNAME_SERVER: {
 				
 				values=value.split(",");
@@ -390,11 +376,25 @@ public class DirMessage {
 				sb.append(FIELDNAME_PROTOCOL_ID + DELIMITER + protocolId + END_LINE);
 				break;
 			}
-			case DirMessageOps.OPERATION_DIRFILES_OK: {
-				sb.append(FIELDNAME_LAST + DELIMITER + isLast + END_LINE);
+			case DirMessageOps.OPERATION_DIRFILES_REQ: {
+				break;
+			}
+			case DirMessageOps.OPERATION_DIRFILES_REP: {
+				sb.append(FIELDNAME_BLOCK_NUMBER + DELIMITER + blockNumber + END_LINE);
 				for(FileInfo file: fileList) {
 					sb.append(FIELDNAME_FILE + DELIMITER + file.fileName + "," + file.fileSize + "," + file.fileHash + END_LINE);
 				}
+				break;
+			}
+			case DirMessageOps.OPERATION_DIRFILES_ACK: {
+				sb.append(FIELDNAME_ACK_NUMBER + DELIMITER + ackNumber + END_LINE);
+				break;
+			}
+			case DirMessageOps.OPERATION_DIRFILES_ERROR: {
+				sb.append(FIELDNAME_ERROR_INFO + DELIMITER + errorInfo + END_LINE);
+				break;
+			}
+			case DirMessageOps.OPERATION_DIRFILES_OK: {
 				break;
 			}
 			case DirMessageOps.OPERATION_SERVE: {

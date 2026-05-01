@@ -25,7 +25,7 @@ public class NFDirectoryServer {
 	 * Número de puerto UDP en el que escucha el directorio
 	 */
 	public static final int DIRECTORY_PORT = 6868;
-
+	private static final int FILES_TO_SENT = 1;
 	/**
 	 * Socket de comunicación UDP con el cliente UDP (DirectoryConnector)
 	 */
@@ -300,29 +300,46 @@ public class NFDirectoryServer {
 
 			break;
 		}
-		case DirMessageOps.OPERATION_DIRFILES: {
-				System.out.println("Dirfiles succesful");
+		
+		case DirMessageOps.OPERATION_DIRFILES_REQ: {
 				int totalFiles = directoryFiles.length;
-				int chunkSize = 7;
+				int chunkSize = FILES_TO_SENT;
+				int fin;
+				int currentAck = -1;
+				DatagramPacket ack_pkt;
 				
-				if( totalFiles == 0) {
-					response=new DirMessage(DirMessageOps.OPERATION_DIRFILES_OK);
-					response.setLast(true);
-					enviarPaquete(response, (InetSocketAddress)pkt.getSocketAddress());
+				for(int i = 0; i < totalFiles; i += chunkSize) {
 					
-				}else {
-					for(int i = 0; i < totalFiles; i += chunkSize) {
-						response = new DirMessage(DirMessageOps.OPERATION_DIRFILES_OK);
-						int fin = Math.min(i + chunkSize, totalFiles);
-						for( int j = i; j < fin; j ++) {
-							response.addFile(directoryFiles[j]);
+					while( currentAck != i ) {
+						try {
+
+							response = new DirMessage(DirMessageOps.OPERATION_DIRFILES_REP);
+							response.setBlockNumber(i);
+							fin = Math.min(i + chunkSize, totalFiles);
+							for( int j = i; j < fin; j ++) {
+								response.addFile(directoryFiles[j]);
+							}
+							ack_pkt = enviarRecibirPaquete(response, (InetSocketAddress)pkt.getSocketAddress());
+							request = DirMessage.fromString(new String( ack_pkt.getData(), 0, ack_pkt.getLength()));
+							
+							if(request.getOperation().equals(DirMessageOps.OPERATION_DIRFILES_ACK)) {
+								currentAck = (int)request.getAckNumber();
+							}	
+						}catch(IOException e) {
+							response=new DirMessage(DirMessageOps.OPERATION_DIRFILES_ERROR);
+							response.setErrorInfo("");
+							System.err.println(e.getMessage());	
 						}
-						response.setLast(fin == totalFiles);
-						enviarPaquete(response, (InetSocketAddress)pkt.getSocketAddress());
 					}
+					System.out.println("Block "+ (i/7) + " successfully sent");
+		
 				}
-			
-			break;
+
+				
+				response=new DirMessage(DirMessageOps.OPERATION_DIRFILES_OK);
+				System.out.println("Files sent successfully");
+				
+				break;
 		}
 		case DirMessageOps.OPERATION_SERVE: {
 			
@@ -462,8 +479,8 @@ public class NFDirectoryServer {
 		 * (msgToSend) con el mensaje de respuesta a enviar, extraer los bytes en que se
 		 * codifica el string y finalmente enviarlos en un datagrama
 		 */
-		if(!operation.equals(DirMessageOps.OPERATION_DIRFILES_OK)
-				&& !operation.equals(DirMessageOps.OPERATION_DIRFILES)) {
+		if(!operation.equals(DirMessageOps.OPERATION_DIRDL_REPLY)
+				&& !operation.equals(DirMessageOps.OPERATION_DIRFILES_REP)) {
 			String responseString=response.toString();
 			byte[] responseData=responseString.getBytes();
 			InetSocketAddress clientAddr = (InetSocketAddress) pkt.getSocketAddress();

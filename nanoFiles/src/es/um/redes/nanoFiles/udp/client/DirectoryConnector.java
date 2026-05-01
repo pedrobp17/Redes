@@ -38,7 +38,10 @@ public class DirectoryConnector {
 	 * socket antes de que se deba lanzar una excepción SocketTimeoutException para
 	 * recuperar el control
 	 */
+	private static final int TIMEOUT_LIMPIEZA = 1000;
+
 	private static final int TIMEOUT = 2000;
+	
 	/**
 	 * Número de intentos máximos para obtener del directorio una respuesta a una
 	 * solicitud enviada. Cada vez que expira el timeout sin recibir respuesta se
@@ -179,7 +182,23 @@ public class DirectoryConnector {
 		}
 		return response;
 	}
-
+	/** Funcion para limpiar el socket de paquetes de operaciones anteriores que han fallado **/
+	private void limpiarSocket() {
+		byte[] buffer = new byte[DirMessage.PACKET_MAX_SIZE];
+		DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
+		int paquetes = 0;
+		try {
+			while(true) {
+				socket.setSoTimeout(TIMEOUT_LIMPIEZA);
+				socket.receive(packet);
+				paquetes++;
+			}
+		}catch(IOException e){
+			if( paquetes > 0) {
+				System.out.println(paquetes + " packets were cleaned from socket");
+			}
+		}
+	}
 	/**
 	 * Método para probar la comunicación con el directorio mediante el envío y
 	 * recepción de mensajes sin formatear ("en crudo")
@@ -340,50 +359,47 @@ public class DirectoryConnector {
 	 *         pudo satisfacer nuestra solicitud
 	 */
 	public FileInfo[] getFileList() {
+		limpiarSocket();
 		ArrayList<FileInfo> filelist = new ArrayList<>();
 		// TODO: Ver TODOs en pingDirectory y seguir esquema similar
-		boolean isLast = false;
-		
-		int attempts=0;
-		try {
-			DirMessage request=new DirMessage(DirMessageOps.OPERATION_DIRFILES);
-			byte[] requestString = request.toString().getBytes();
-			DatagramPacket requestPacket=new DatagramPacket(requestString, requestString.length, directoryAddress);
-			socket.send(requestPacket);
-			socket.setSoTimeout(TIMEOUT);
+		DirMessage messageToDirectory=new DirMessage(DirMessageOps.OPERATION_DIRFILES_REQ);
+		byte[] messageFromDirectoryBytes =sendAndReceiveDatagrams(messageToDirectory.toString().getBytes());
+		if( messageFromDirectoryBytes != null) {
+			System.out.println("Received reply: 0");
+			DirMessage messageFromDirectory=DirMessage.fromString(new String(messageFromDirectoryBytes));
+			boolean imprimir = false;
 			
-			while(!isLast && attempts < MAX_NUMBER_OF_ATTEMPTS) {
-				try {
-					byte[] responseData= new byte[DirMessage.PACKET_MAX_SIZE];
-					DatagramPacket responsePacket=new DatagramPacket(responseData, responseData.length);
-					socket.receive(responsePacket);
-					
-					DirMessage response=DirMessage.fromString(
-							new String (responsePacket.getData(), 0, responsePacket.getLength()));
-							if (response.getOperation().equals(DirMessageOps.OPERATION_DIRFILES_OK)) {
-								filelist.addAll(response.getFileList());
-								isLast = response.getLast();
-								attempts = 0;
-							} else {
-								System.err.println("Unexpected response while getting directory files: "
-										+ response.getOperation());
-								break;
-							}
-						} catch (SocketTimeoutException e) {
-							attempts++;
-							if (attempts >= MAX_NUMBER_OF_ATTEMPTS) {
-								System.err.println("Timeout while receiving directory file list.");
-							}
-						}
-					}
-				} catch (IOException e) {
-					System.err.println("Check your connection, cannot comunicate with directory");
+			while(messageFromDirectory.getOperation().equals(DirMessageOps.OPERATION_DIRFILES_REP)) {
+				if( imprimir ) {
+					System.out.println("Received reply: " + messageFromDirectory.getBlockNumber());
 				}
-		
+				filelist.addAll(messageFromDirectory.getFileList());
+				messageToDirectory=new DirMessage(DirMessageOps.OPERATION_DIRFILES_ACK);
+				messageToDirectory.setAckNumber(messageFromDirectory.getBlockNumber());
+				System.out.println("Sending ack: " + messageFromDirectory.getBlockNumber());
+				messageFromDirectoryBytes = sendAndReceiveDatagrams(messageToDirectory.toString().getBytes());
+				if( messageFromDirectoryBytes != null) {
+					messageFromDirectory=DirMessage.fromString(new String(messageFromDirectoryBytes));
+				}else{
+					return null;
+				}
+				imprimir = true;
+			}
 			
-		
-		
-		return filelist.toArray(new FileInfo[0]);
+			if(messageFromDirectory.getOperation().equals(DirMessageOps.OPERATION_DIRDL_ERROR)) {
+			
+				String error=messageFromDirectory.getErrorInfo();
+				
+				if(!error.isBlank()) {
+					System.out.println(error);
+				}
+				
+			}
+			
+			return filelist.toArray(new FileInfo[0]);
+
+		}
+		return null;
 	}
 
 	public Map<String, InetSocketAddress> getPeerList() {
@@ -445,6 +461,7 @@ public class DirectoryConnector {
 	}
 
 	public DownloadedFile downloadFileFromDirectory(String hashSubstring) {
+		limpiarSocket();
 		File fileData = null;
 		String filename = null;
 		long filesize = -1;
