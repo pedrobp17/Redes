@@ -38,7 +38,6 @@ public class DirectoryConnector {
 	 * socket antes de que se deba lanzar una excepción SocketTimeoutException para
 	 * recuperar el control
 	 */
-	private static final int TIMEOUT_LIMPIEZA = 1000;
 
 	private static final int TIMEOUT = 2000;
 	
@@ -359,31 +358,43 @@ public class DirectoryConnector {
 	 *         pudo satisfacer nuestra solicitud
 	 */
 	public FileInfo[] getFileList() {
-		limpiarSocket();
 		ArrayList<FileInfo> filelist = new ArrayList<>();
+		long spectedRep = 0;
+		long actualRep;
 		// TODO: Ver TODOs en pingDirectory y seguir esquema similar
 		DirMessage messageToDirectory=new DirMessage(DirMessageOps.OPERATION_DIRFILES_REQ);
 		byte[] messageFromDirectoryBytes =sendAndReceiveDatagrams(messageToDirectory.toString().getBytes());
 		if( messageFromDirectoryBytes != null) {
-			System.out.println("Received reply: 0");
+
 			DirMessage messageFromDirectory=DirMessage.fromString(new String(messageFromDirectoryBytes));
-			boolean imprimir = false;
 			
 			while(messageFromDirectory.getOperation().equals(DirMessageOps.OPERATION_DIRFILES_REP)) {
-				if( imprimir ) {
-					System.out.println("Received reply: " + messageFromDirectory.getBlockNumber());
+				actualRep = messageFromDirectory.getBlockNumber();
+				System.out.println("Received reply: " + actualRep);
+				if( spectedRep == actualRep ) {
+					filelist.addAll(messageFromDirectory.getFileList());
+					messageToDirectory=new DirMessage(DirMessageOps.OPERATION_DIRFILES_ACK);
+					messageToDirectory.setAckNumber(actualRep);
+					System.out.println("Sending ack: " + actualRep);
+					messageFromDirectoryBytes = sendAndReceiveDatagrams(messageToDirectory.toString().getBytes());
+					if( messageFromDirectoryBytes != null) {
+						messageFromDirectory=DirMessage.fromString(new String(messageFromDirectoryBytes));
+						spectedRep++;
+					}else{
+						return null;
+					}	
+				}else {
+					System.out.println("Ignoring dirfiles reply: " + actualRep);
+					messageToDirectory=new DirMessage(DirMessageOps.OPERATION_DIRFILES_ACK);
+					messageToDirectory.setAckNumber(spectedRep - 1);
+					System.out.println("Sending ack: " + (spectedRep - 1));
+					messageFromDirectoryBytes = sendAndReceiveDatagrams(messageToDirectory.toString().getBytes());
+					if( messageFromDirectoryBytes != null) {
+						messageFromDirectory=DirMessage.fromString(new String(messageFromDirectoryBytes));
+					}else{
+						return null;
+					}
 				}
-				filelist.addAll(messageFromDirectory.getFileList());
-				messageToDirectory=new DirMessage(DirMessageOps.OPERATION_DIRFILES_ACK);
-				messageToDirectory.setAckNumber(messageFromDirectory.getBlockNumber());
-				System.out.println("Sending ack: " + messageFromDirectory.getBlockNumber());
-				messageFromDirectoryBytes = sendAndReceiveDatagrams(messageToDirectory.toString().getBytes());
-				if( messageFromDirectoryBytes != null) {
-					messageFromDirectory=DirMessage.fromString(new String(messageFromDirectoryBytes));
-				}else{
-					return null;
-				}
-				imprimir = true;
 			}
 			
 			if(messageFromDirectory.getOperation().equals(DirMessageOps.OPERATION_DIRDL_ERROR)) {
@@ -461,13 +472,14 @@ public class DirectoryConnector {
 	}
 
 	public DownloadedFile downloadFileFromDirectory(String hashSubstring) {
-		limpiarSocket();
 		File fileData = null;
 		String filename = null;
 		long filesize = -1;
 		String filehash = null;
 		ByteArrayOutputStream baos=new ByteArrayOutputStream();
 		File temp=FileNameUtil.chooseAvailableName("dirdl.tmp").toFile();
+		long spectedRep = 0;
+		long actualRep;
 		
 		FileOutputStream fos;
 		try {
@@ -481,28 +493,37 @@ public class DirectoryConnector {
 		messageToPeer.setSubHash(hashSubstring);
 		byte[] messageFromPeerBytes=sendAndReceiveDatagrams(messageToPeer.toString().getBytes());
 		if( messageFromPeerBytes != null) {
-			System.out.println("Received reply: 0");
 			DirMessage messageFromPeer=DirMessage.fromString(new String(messageFromPeerBytes));
-			boolean imprimir = false;
-		
+			
 			try {
 				while(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_REPLY)) {
-					if( imprimir ) {
-						System.out.println("Received reply: " + messageFromPeer.getBlockNumber());
+					actualRep = messageFromPeer.getBlockNumber();
+					System.out.println("Received reply: " + actualRep);
+					if( actualRep == spectedRep) {
+						fos.write(messageFromPeer.getData(), 0, messageFromPeer.getData().length);
+						messageToPeer=new DirMessage(DirMessageOps.OPERATION_DIRDL_ACK);
+						messageToPeer.setAckNumber(actualRep);
+						System.out.println("Sending ack: " + actualRep);
+						messageFromPeerBytes = sendAndReceiveDatagrams(messageToPeer.toString().getBytes());
+						if( messageFromPeerBytes != null) {
+							messageFromPeer=DirMessage.fromString(new String(messageFromPeerBytes));
+							spectedRep++;
+						}else{
+							return new DownloadedFile(filename, filesize, fileData, filehash);
+						}	
+					}else {
+						System.out.println("Ignoring dirdl reply: " + actualRep);
+						messageToPeer=new DirMessage(DirMessageOps.OPERATION_DIRDL_ACK);
+						messageToPeer.setAckNumber( spectedRep - 1);
+						System.out.println("Sending ack: " + (spectedRep - 1));
+						messageFromPeerBytes = sendAndReceiveDatagrams(messageToPeer.toString().getBytes());
+						if( messageFromPeerBytes != null) {
+							messageFromPeer=DirMessage.fromString(new String(messageFromPeerBytes));
+						}else{
+							return new DownloadedFile(filename, filesize, fileData, filehash);
+						}	
+						
 					}
-					
-					fos.write(messageFromPeer.getData(), 0, messageFromPeer.getData().length);
-					
-					messageToPeer=new DirMessage(DirMessageOps.OPERATION_DIRDL_ACK);
-					messageToPeer.setAckNumber(messageFromPeer.getBlockNumber());
-					System.out.println("Sending ack: " + messageFromPeer.getBlockNumber());
-					messageFromPeerBytes = sendAndReceiveDatagrams(messageToPeer.toString().getBytes());
-					if( messageFromPeerBytes != null) {
-						messageFromPeer=DirMessage.fromString(new String(messageFromPeerBytes));
-					}else{
-						return new DownloadedFile(filename, filesize, fileData, filehash);
-					}
-					imprimir = true;
 				}
 				
 				if(messageFromPeer.getOperation().equals(DirMessageOps.OPERATION_DIRDL_ERROR)) {

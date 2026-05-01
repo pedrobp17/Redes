@@ -26,6 +26,9 @@ public class NFDirectoryServer {
 	 */
 	public static final int DIRECTORY_PORT = 6868;
 	private static final int FILES_TO_SENT = 1;
+	private static final int ACK_TIMEOUT = 2000;
+	private static final int MAX_ACK_ATTEMPTS = 5;
+	
 	/**
 	 * Socket de comunicación UDP con el cliente UDP (DirectoryConnector)
 	 */
@@ -62,9 +65,22 @@ public class NFDirectoryServer {
 		String responseString = m.toString();
 		byte[] responseData=responseString.getBytes();
 		DatagramPacket responsePacket=new DatagramPacket(responseData, responseData.length, addr);
-		socket.send(responsePacket);
-		DatagramPacket ack_pkt=receiveDatagram();
-		return ack_pkt;
+		int previousTimeout = socket.getSoTimeout();
+		try{
+			socket.setSoTimeout(ACK_TIMEOUT);
+			for( int i = 0; i < MAX_ACK_ATTEMPTS; i++) {
+				socket.send(responsePacket);
+				try {
+					DatagramPacket ack_pkt=receiveDatagram();
+					return ack_pkt;
+				}catch(SocketTimeoutException e) {
+					System.err.println("Timeout waiting for ack, retrying...");
+				}
+			}
+			throw new SocketTimeoutException("Max retries reached waiting for ack");
+		}finally {
+			socket.setSoTimeout(previousTimeout);
+		}
 	}
 
 	public NFDirectoryServer(double corruptionProbability, String directoryFilesPath) throws SocketException {
@@ -305,16 +321,16 @@ public class NFDirectoryServer {
 				int totalFiles = directoryFiles.length;
 				int chunkSize = FILES_TO_SENT;
 				int fin;
-				int currentAck = -1;
+				boolean received;
 				DatagramPacket ack_pkt;
 				
 				for(int i = 0; i < totalFiles; i += chunkSize) {
-					
-					while( currentAck != i ) {
+					received = false;
+					while( !received ) {
 						try {
 
 							response = new DirMessage(DirMessageOps.OPERATION_DIRFILES_REP);
-							response.setBlockNumber(i);
+							response.setBlockNumber(i/FILES_TO_SENT);
 							fin = Math.min(i + chunkSize, totalFiles);
 							for( int j = i; j < fin; j ++) {
 								response.addFile(directoryFiles[j]);
@@ -322,16 +338,17 @@ public class NFDirectoryServer {
 							ack_pkt = enviarRecibirPaquete(response, (InetSocketAddress)pkt.getSocketAddress());
 							request = DirMessage.fromString(new String( ack_pkt.getData(), 0, ack_pkt.getLength()));
 							
-							if(request.getOperation().equals(DirMessageOps.OPERATION_DIRFILES_ACK)) {
-								currentAck = (int)request.getAckNumber();
+							if(request.getOperation().equals(DirMessageOps.OPERATION_DIRFILES_ACK) && request.getAckNumber() == (i/FILES_TO_SENT)) {
+								received = true;
 							}	
 						}catch(IOException e) {
 							response=new DirMessage(DirMessageOps.OPERATION_DIRFILES_ERROR);
 							response.setErrorInfo("");
 							System.err.println(e.getMessage());	
+							return;
 						}
 					}
-					System.out.println("Block "+ (i/7) + " successfully sent");
+					System.out.println("Block "+ (i/FILES_TO_SENT) + " successfully sent");
 		
 				}
 
@@ -394,7 +411,7 @@ public class NFDirectoryServer {
 				
 				long offset;
 				int cantidad;
-				long currentAck=-1;
+				boolean received;
 				DatagramPacket ack_pkt;
 				
 				RandomAccessFile f=new RandomAccessFile(file, "r");
@@ -409,7 +426,8 @@ public class NFDirectoryServer {
 					f.seek(offset);
 					f.readFully(dataToRead);
 					
-					while(currentAck!=i) {
+					received = false;
+					while( !received ) {
 						
 						try {
 							response=new DirMessage(DirMessageOps.OPERATION_DIRDL_REPLY);
@@ -419,14 +437,16 @@ public class NFDirectoryServer {
 							ack_pkt=enviarRecibirPaquete(response, (InetSocketAddress)pkt.getSocketAddress());
 							request=DirMessage.fromString(new String(ack_pkt.getData(), 0, ack_pkt.getLength()));
 							
-							if(request.getOperation().equals(DirMessageOps.OPERATION_DIRDL_ACK)) {
-								currentAck=request.getAckNumber();
+							if(request.getOperation().equals(DirMessageOps.OPERATION_DIRDL_ACK) && request.getAckNumber() == i) {
+								received = true;
 							}
 						}
 						catch(IOException e) { //esto tambien tiene en cuenta los timeout
 							response=new DirMessage(DirMessageOps.OPERATION_DIRDL_ERROR);
 							response.setErrorInfo("");
 							System.err.println(e.getMessage());
+							f.close();
+							return;
 						}
 					}
 					
@@ -471,7 +491,6 @@ public class NFDirectoryServer {
 		}
 		default:
 			System.err.println("Unexpected message operation: \"" + operation + "\"");
-			System.exit(-1);
 		}
 
 		/*
