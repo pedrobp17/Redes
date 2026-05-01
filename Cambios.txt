@@ -58,3 +58,12 @@ correctamente y ya pues hacer la memoria.
 --> mirar si quitar el quit_error pq nunca se podria dar
 
 --> mirar de cambiar lo que pasa cuando timeout = 5 pq ahora devuelve null y rompe el programa y ns si seria mejor que directamente diera por perdido el intento de ejecutar el comando 
+
+-----Pedro-----
+
+--> he añadido en NFController un atributo para cuando el quit falle todo funcione bien
+
+--> he añadido en la funcion de dirdl mensajes de depuracion para saber que mensajes se pierden y por donde va el flujo de descarga
+
+--> falta añadir acks a dirfiles
+
